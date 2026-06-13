@@ -7,11 +7,27 @@ static HistoryEntry s_entries[HISTORY_MAX_ENTRIES];
 static int s_count = 0;
 static char s_thread_id[37] = "";
 static bool s_done = false;
+static bool s_loading = false;
+static void (*s_done_callback)(void) = NULL;
 
 void history_init(void) {
   s_count = 0;
   s_done = false;
+  s_loading = true;
+  s_done_callback = NULL;
   s_thread_id[0] = '\0';
+}
+
+void history_set_loading(bool loading) {
+  s_loading = loading;
+}
+
+bool history_is_loading(void) {
+  return s_loading;
+}
+
+void history_set_done_callback(void (*callback)(void)) {
+  s_done_callback = callback;
 }
 
 void history_add_prompt(const char* text) {
@@ -73,7 +89,12 @@ void history_push_thread_id(const char* thread_id) {
 
 void history_set_done(void) {
   s_done = true;
+  s_loading = false;
   SQUIRE_LOG(APP_LOG_LEVEL_INFO, "History done. %d entries.", s_count);
+  if (s_done_callback) {
+    s_done_callback();
+    s_done_callback = NULL;
+  }
 }
 
 bool history_is_available(void) {

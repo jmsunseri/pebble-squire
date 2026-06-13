@@ -24,6 +24,7 @@
 #include "menus/about_window.h"
 #include "util/logging.h"
 #include "util/style.h"
+#include "util/thinking_layer.h"
 #include "util/memory/malloc.h"
 #include "util/memory/sdk.h"
 #include "vibes/haptic_feedback.h"
@@ -163,9 +164,52 @@ static void prv_click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_DOWN, prv_more_clicked);
 }
 
+static Window *s_loading_window = NULL;
+static ThinkingLayer *s_loading_thinking_layer = NULL;
+
+static void prv_loading_window_unload(Window *window) {
+  if (s_loading_thinking_layer) {
+    thinking_layer_destroy(s_loading_thinking_layer);
+    s_loading_thinking_layer = NULL;
+  }
+  window_destroy(s_loading_window);
+  s_loading_window = NULL;
+}
+
+static void prv_history_loaded_callback(void) {
+  if (s_loading_window) {
+    window_stack_remove(s_loading_window, true);
+    // Unload handler will destroy resources
+  }
+  session_window_push_with_history(0, NULL, history_get_thread_id());
+}
+
+static void prv_push_loading_window(void) {
+  if (s_loading_window) return;
+  Window *window = bwindow_create();
+  s_loading_window = window;
+  window_set_window_handlers(window, (WindowHandlers) {
+    .unload = prv_loading_window_unload,
+  });
+  window_set_background_color(window, BRANDED_BACKGROUND_COLOUR);
+  Layer *root_layer = window_get_root_layer(window);
+  GRect bounds = layer_get_bounds(root_layer);
+  s_loading_thinking_layer = thinking_layer_create(GRect(
+    (bounds.size.w - THINKING_LAYER_WIDTH) / 2,
+    (bounds.size.h - THINKING_LAYER_HEIGHT) / 2,
+    THINKING_LAYER_WIDTH,
+    THINKING_LAYER_HEIGHT));
+  layer_add_child(root_layer, s_loading_thinking_layer);
+  window_stack_push(window, true);
+}
+
 static void prv_up_clicked(ClickRecognizerRef recognizer, void *context) {
   if (history_is_available()) {
     session_window_push_with_history(0, NULL, history_get_thread_id());
+  } else if (history_is_loading()) {
+    // Wait for history to load before deciding whether to show history or start fresh
+    history_set_done_callback(prv_history_loaded_callback);
+    prv_push_loading_window();
   } else {
     session_window_push(0, NULL);
   }
@@ -185,11 +229,8 @@ static void prv_suggestion_clicked(ActionMenu *action_menu, const ActionMenuItem
 }
 
 static void prv_prompt_clicked(ClickRecognizerRef recognizer, void *context) {
-  if (history_is_available()) {
-    session_window_push_with_history(0, NULL, history_get_thread_id());
-  } else {
-    session_window_push(0, NULL);
-  }
+  // SELECT always starts a fresh voice conversation, regardless of history state.
+  session_window_push(0, NULL);
 }
 
 static void prv_more_clicked(ClickRecognizerRef recognizer, void* context) {

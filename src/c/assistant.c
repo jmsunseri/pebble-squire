@@ -37,16 +37,24 @@ static RootWindow* s_root_window = NULL;
 static EventHandle s_history_handle;
 
 static void prv_history_message_handler(DictionaryIterator *iter, void *context) {
+  bool saw_history_key = false;
   for (Tuple *tuple = dict_read_first(iter); tuple; tuple = dict_read_next(iter)) {
     if (tuple->key == MESSAGE_KEY_HISTORY_PROMPT) {
+      saw_history_key = true;
       history_add_prompt(tuple->value->cstring);
     } else if (tuple->key == MESSAGE_KEY_HISTORY_RESPONSE) {
+      saw_history_key = true;
       history_add_response(tuple->value->cstring);
     } else if (tuple->key == MESSAGE_KEY_HISTORY_THREAD_ID) {
+      saw_history_key = true;
       history_set_thread_id(tuple->value->cstring);
     } else if (tuple->key == MESSAGE_KEY_HISTORY_DONE) {
+      saw_history_key = true;
       history_set_done();
     }
+  }
+  if (saw_history_key) {
+    history_set_loading(false);
   }
 }
 
