@@ -246,10 +246,8 @@ Session.prototype.pollForMessages = function(client, botUsername, startTime, tim
 };
 
 Session.prototype.handleIncomingMessage = function(message, resolve) {
-    // Strip system prompt and metadata from incoming responses/history so they are never displayed
-    message = message.replace(/<system>.*?<\/system>/g, '');
-    message = message.replace(/\n*---METADATA---\n[\s\S]*/, '');
-    message = message.trim();
+    // Note: live bot responses should not contain the <system> prompt or ---METADATA--- block,
+    // since those are only in outgoing user messages. If they do, the backend is echoing them.
     console.log('Received message:', message.substring(0, 100));
 
     // Parse the message format:
@@ -373,10 +371,6 @@ Session.prototype.runLegacy = function() {
 
 Session.prototype.handleLegacyMessage = function(event) {
     var message = event.data;
-    // Strip system prompt and metadata from legacy responses so they are never displayed
-    message = message.replace(/<system>.*?<\/system>/g, '');
-    message = message.replace(/\n*---METADATA---\n[\s\S]*/, '');
-    message = message.trim();
     console.log(message);
 
     if (message[0] == 'c') {
