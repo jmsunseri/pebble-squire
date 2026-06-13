@@ -1,0 +1,310 @@
+{
+  "name": "Clawd",
+  "author": "Justin Sunseri",
+  "version": "1.4.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@rebble/clay": "1.0.8",
+    "@rebble/linked-list": "^1.5.1",
+    "pebble-events": "^1.2.1"
+  },
+  "pebble": {
+    "displayName": "Clawd",
+    "uuid": "1d272bb4-cf00-4e3e-a7f3-7394309e0341",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "capabilities": [
+      "configurable",
+      "location"
+    ],
+    "targetPlatforms": [
+      "emery",
+      "gabbro"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [
+      "CHAT",
+      "FUNCTION",
+      "PROMPT",
+      "CLOSE_CODE",
+      "CLOSE_REASON",
+      "CLOSE_WAS_CLEAN",
+      "CHAT_DONE",
+      "THREAD_ID",
+      "CURRENT_TIME",
+      "LANGUAGE_CODE",
+      "UNIT_PREFERENCE",
+      "LOCATION_ENABLED",
+      "WARNING",
+      "WEATHER_WIDGET",
+      "WEATHER_WIDGET_DAY_HIGH",
+      "WEATHER_WIDGET_DAY_LOW",
+      "WEATHER_WIDGET_DAY_ICON",
+      "WEATHER_WIDGET_LOCATION",
+      "WEATHER_WIDGET_DAY_SUMMARY",
+      "WEATHER_WIDGET_TEMP_UNIT",
+      "WEATHER_WIDGET_DAY_OF_WEEK",
+      "WEATHER_WIDGET_CURRENT_TEMP",
+      "WEATHER_WIDGET_FEELS_LIKE",
+      "WEATHER_WIDGET_WIND_SPEED",
+      "WEATHER_WIDGET_WIND_SPEED_UNIT",
+      "WEATHER_WIDGET_MULTI_DAY",
+      "WEATHER_WIDGET_MULTI_DAY_0",
+      "WEATHER_WIDGET_MULTI_DAY_1",
+      "WEATHER_WIDGET_MULTI_DAY_2",
+      "WEATHER_WIDGET_MULTI_ICON",
+      "WEATHER_WIDGET_MULTI_ICON_0",
+      "WEATHER_WIDGET_MULTI_ICON_1",
+      "WEATHER_WIDGET_MULTI_ICON_2",
+      "WEATHER_WIDGET_MULTI_HIGH",
+      "WEATHER_WIDGET_MULTI_HIGH_0",
+      "WEATHER_WIDGET_MULTI_HIGH_1",
+      "WEATHER_WIDGET_MULTI_HIGH_2",
+      "WEATHER_WIDGET_MULTI_LOW",
+      "WEATHER_WIDGET_MULTI_LOW_0",
+      "WEATHER_WIDGET_MULTI_LOW_1",
+      "WEATHER_WIDGET_MULTI_LOW_2",
+      "HIGHLIGHT_WIDGET",
+      "HIGHLIGHT_WIDGET_PRIMARY",
+      "HIGHLIGHT_WIDGET_SECONDARY",
+      "QUICK_LAUNCH_BEHAVIOUR",
+      "COBBLE_WARNING",
+      "IMAGE_WIDTH",
+      "IMAGE_HEIGHT",
+      "IMAGE_START_BYTE_SIZE",
+      "IMAGE_CHUNK_OFFSET",
+      "IMAGE_CHUNK_DATA",
+      "IMAGE_COMPLETE",
+      "IMAGE_ID",
+      "MAP_WIDGET",
+      "MAP_WIDGET_IMAGE_ID",
+      "MAP_WIDGET_USER_LOCATION",
+      "CONFIRM_TRANSCRIPTS",
+      "ACTION_SETTINGS_UPDATED",
+      "TELEGRAM_CONNECTED",
+      "TELEGRAM_PHONE",
+      "TELEGRAM_CODE",
+      "TELEGRAM_SEND_CODE",
+      "TELEGRAM_DISCONNECT",
+      "TELEGRAM_PENDING_ACTION",
+      "OPENCLAW_BOT",
+      "HISTORY_PROMPT",
+      "HISTORY_RESPONSE",
+      "HISTORY_THREAD_ID",
+      "HISTORY_DONE"
+    ],
+    "resources": {
+      "media": [
+        {
+          "file": "images_icons_menu_icon_default.png",
+          "menuIcon": true,
+          "name": "IMAGE_MENU_ICON",
+          "type": "bitmap"
+        },
+        {
+          "file": "images_icons_question_icon.png",
+          "name": "QUESTION_ICON",
+          "type": "bitmap"
+        },
+        {
+          "file": "images_icons_dictation_icon.png",
+          "name": "DICTATION_ICON",
+          "type": "bitmap"
+        },
+        {
+          "file": "images_icons_more_icon.png",
+          "name": "MORE_ICON",
+          "type": "bitmap"
+        },
+        {
+          "file": "images_button_indicator.png",
+          "name": "BUTTON_INDICATOR",
+          "type": "bitmap"
+        },
+        {
+          "file": "images_root_screen_lobster_large.pdc",
+          "name": "ROOT_SCREEN_LOBSTER",
+          "type": "raw"
+        },
+        {
+          "file": "images_sleeping_pony.pdc",
+          "name": "SLEEPING_LOBSTER",
+          "type": "raw"
+        },
+        {
+          "file": "icons_cog.pdc",
+          "name": "COG_ICON",
+          "type": "raw"
+        },
+        {
+          "file": "icons_lightbulb.pdc",
+          "name": "LIGHTBULB_ICON",
+          "type": "raw"
+        },
+        {
+          "file": "icons_skull.pdc",
+          "name": "SKULL_ICON",
+          "type": "raw"
+        },
+        {
+          "file": "animations_tired_pony.pdcs",
+          "name": "TIRED_LOBSTER",
+          "type": "raw"
+        },
+        {
+          "file": "animations_running_pony.pdcs",
+          "name": "RUNNING_LOBSTER",
+          "type": "raw"
+        },
+        {
+          "file": "images_failed_pony.pdc",
+          "name": "FAILED_LOBSTER",
+          "type": "raw"
+        },
+        {
+          "file": "text_legal.txt",
+          "name": "LEGAL_TEXT",
+          "type": "raw"
+        },
+        {
+          "file": "text_about.txt",
+          "name": "ABOUT_TEXT",
+          "type": "raw"
+        },
+        {
+          "file": "text_openclaw_consent.txt",
+          "name": "OPENCLAW_CONSENT_TEXT",
+          "type": "raw"
+        },
+        {
+          "file": "text_llm_warning.txt",
+          "name": "LLM_WARNING_TEXT",
+          "type": "raw"
+        },
+        {
+          "file": "text_location_consent.txt",
+          "name": "LOCATION_CONSENT_TEXT",
+          "type": "raw"
+        },
+        {
+          "file": "text_sample_prompts.txt",
+          "name": "SAMPLE_PROMPTS",
+          "type": "raw"
+        },
+        {
+          "file": "weather_medium_generic.pdc",
+          "name": "WEATHER_MEDIUM_GENERIC",
+          "type": "raw"
+        },
+        {
+          "file": "weather_medium_heavy_rain.pdc",
+          "name": "WEATHER_MEDIUM_HEAVY_RAIN",
+          "type": "raw"
+        },
+        {
+          "file": "weather_medium_heavy_snow.pdc",
+          "name": "WEATHER_MEDIUM_HEAVY_SNOW",
+          "type": "raw"
+        },
+        {
+          "file": "weather_medium_light_rain.pdc",
+          "name": "WEATHER_MEDIUM_LIGHT_RAIN",
+          "type": "raw"
+        },
+        {
+          "file": "weather_medium_light_snow.pdc",
+          "name": "WEATHER_MEDIUM_LIGHT_SNOW",
+          "type": "raw"
+        },
+        {
+          "file": "weather_medium_partly_cloudy.pdc",
+          "name": "WEATHER_MEDIUM_PARTLY_CLOUDY",
+          "type": "raw"
+        },
+        {
+          "file": "weather_medium_cloudy.pdc",
+          "name": "WEATHER_MEDIUM_CLOUDY",
+          "type": "raw"
+        },
+        {
+          "file": "weather_medium_sunny.pdc",
+          "name": "WEATHER_MEDIUM_SUNNY",
+          "type": "raw"
+        },
+        {
+          "file": "weather_small_generic.pdc",
+          "name": "WEATHER_SMALL_GENERIC",
+          "type": "raw"
+        },
+        {
+          "file": "weather_small_heavy_rain.pdc",
+          "name": "WEATHER_SMALL_HEAVY_RAIN",
+          "type": "raw"
+        },
+        {
+          "file": "weather_small_heavy_snow.pdc",
+          "name": "WEATHER_SMALL_HEAVY_SNOW",
+          "type": "raw"
+        },
+        {
+          "file": "weather_small_light_rain.pdc",
+          "name": "WEATHER_SMALL_LIGHT_RAIN",
+          "type": "raw"
+        },
+        {
+          "file": "weather_small_light_snow.pdc",
+          "name": "WEATHER_SMALL_LIGHT_SNOW",
+          "type": "raw"
+        },
+        {
+          "file": "weather_small_partly_cloudy.pdc",
+          "name": "WEATHER_SMALL_PARTLY_CLOUDY",
+          "type": "raw"
+        },
+        {
+          "file": "weather_small_cloudy.pdc",
+          "name": "WEATHER_SMALL_CLOUDY",
+          "type": "raw"
+        },
+        {
+          "file": "weather_small_sunny.pdc",
+          "name": "WEATHER_SMALL_SUNNY",
+          "type": "raw"
+        },
+        {
+          "file": "images_icons_menu_about.png",
+          "name": "MENU_ICON_ABOUT",
+          "type": "bitmap",
+          "memoryFormat": "SmallestPalette"
+        },
+        {
+          "file": "vibes_haptic_feedback.vibe",
+          "name": "VIBE_HAPTIC_FEEDBACK",
+          "type": "raw"
+        },
+        {
+          "file": "images_skull.pdc",
+          "name": "IMAGE_SKULL",
+          "type": "raw"
+        },
+        {
+          "file": "text_changelog_1.4.txt",
+          "name": "CHANGELOG_1_4",
+          "type": "raw"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "dotenv": "^17.4.2",
+    "vitest": "^4.1.5"
+  }
+}

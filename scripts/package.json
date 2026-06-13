@@ -1,0 +1,20 @@
+{
+  "name": "clawd-scripts",
+  "version": "1.0.0",
+  "description": "Build scripts for Clawd - Telegram bundle generation",
+  "private": true,
+  "scripts": {
+    "build:telegram": "node build-gramjs.js"
+  },
+  "dependencies": {
+    "telegram": "^2.26.22"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.28.6",
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
+    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
+    "esbuild": "^0.27.4"
+  }
+}

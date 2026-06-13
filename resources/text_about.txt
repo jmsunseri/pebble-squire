@@ -1,0 +1,15 @@
+# Clawd
+## Version %d.%d
+Your AI assistant lobster (forked from Bobby for more claw powers)
+
+## Original Project
+Based on Bobby by Katharine Berry
+https://github.com/jmsunseri/bobby-assistant
+
+## Programming
+Katharine Berry
+Justin Sunseri
+
+## Iconography
+Stasia Michalska <lcp.world>
+Justin Sunseri
