@@ -54,6 +54,7 @@ function fetchAndSendHistory() {
                         promptText = promptText.substring(promptText.indexOf('] ') + 2);
                     }
                     promptText = promptText.replace(/\s*<system>[\s\S]*?<\/system>\s*/, '');
+                    promptText = promptText.trim();
                     if (promptText.length > 0) {
                         historyEntries.push({ type: 'prompt', text: promptText });
                     }
