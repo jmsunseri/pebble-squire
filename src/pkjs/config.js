@@ -15,7 +15,7 @@
  */
 
 /**
- * Configuration module for Clawd.
+ * Configuration module for Squire.
  * Client-side configuration - no backend needed.
  */
 
@@ -34,30 +34,30 @@ exports.isLocationEnabled = function () {
 };
 
 /**
- * Get the OpenClaw bot username.
+ * Get the agent username.
  * @returns {string}
  */
 exports.getBotUsername = function () {
-  var username = localStorage.getItem("openclaw_bot_username");
+  var username = localStorage.getItem("agent_telegram_username");
   if (!username) {
     var settings = exports.getSettings();
-    username = settings["OPENCLAW_BOT"] || "@OpenClawBot";
+    username = settings["AGENT_TELEGRAM_USERNAME"] || "@MyAgentBot";
   }
   if (username && !username.startsWith("@")) {
     username = "@" + username;
   }
-  return username || "@OpenClawBot";
+  return username || "@MyAgentBot";
 };
 
 /**
- * Set the OpenClaw bot username.
+ * Set the agent username.
  * @param {string} username
  */
 exports.setBotUsername = function (username) {
   if (username && !username.startsWith("@")) {
     username = "@" + username;
   }
-  localStorage.setItem("openclaw_bot_username", username);
+  localStorage.setItem("agent_telegram_username", username);
 };
 
 /**

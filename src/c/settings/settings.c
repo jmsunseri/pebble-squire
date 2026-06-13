@@ -58,9 +58,9 @@ static void prv_app_message_handler(DictionaryIterator *iter, void *context) {
       persist_write_bool(PERSIST_KEY_CONFIRM_TRANSCRIPTS, tuple->value->int8);
     } else if (tuple->key == MESSAGE_KEY_TELEGRAM_CONNECTED) {
       persist_write_bool(PERSIST_KEY_TELEGRAM_CONNECTED, tuple->value->int8);
-      CLAWD_LOG(APP_LOG_LEVEL_INFO, "Telegram connected: %s", tuple->value->int8 ? "true" : "false");
+      SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Telegram connected: %s", tuple->value->int8 ? "true" : "false");
     } else if (tuple->key == MESSAGE_KEY_TELEGRAM_PENDING_ACTION) {
-      CLAWD_LOG(APP_LOG_LEVEL_INFO, "Echoing TELEGRAM_PENDING_ACTION to phone");
+      SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Echoing TELEGRAM_PENDING_ACTION to phone");
       char *pending_action = tuple->value->cstring;
       DictionaryIterator *out_iter;
       if (app_message_outbox_begin(&out_iter) == APP_MSG_OK) {

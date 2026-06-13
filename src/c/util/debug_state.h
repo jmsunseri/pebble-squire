@@ -18,4 +18,4 @@
 
 #include <pebble.h>
 
-#define CLAWD_DEBUG_LEVEL APP_LOG_LEVEL_ERROR
+#define SQUIRE_DEBUG_LEVEL APP_LOG_LEVEL_ERROR

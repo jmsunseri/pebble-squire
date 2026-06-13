@@ -102,7 +102,7 @@ void conversation_manager_add_input(ConversationManager* manager, const char* in
   conversation_add_prompt(manager->conversation, input);
   prv_conversation_updated(manager, true);
   if (result != APP_MSG_OK) {
-    CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Preparing outbox failed: %d.", result);
+    SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Preparing outbox failed: %d.", result);
     conversation_add_error(manager->conversation, "Sending to service failed.");
     prv_conversation_updated(manager, true);
     return;
@@ -118,12 +118,12 @@ void conversation_manager_add_input(ConversationManager* manager, const char* in
 
   const char* thread_id = conversation_get_thread_id(manager->conversation);
   if (thread_id[0] != 0) {
-    CLAWD_LOG(APP_LOG_LEVEL_INFO, "Continuing previous conversation %s.", thread_id);
+    SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Continuing previous conversation %s.", thread_id);
     dict_write_cstring(iter, MESSAGE_KEY_THREAD_ID, thread_id);
   }
   result = app_message_outbox_send();
   if (result != APP_MSG_OK) {
-    CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Sending message failed: %d.", result);
+    SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Sending message failed: %d.", result);
     conversation_add_error(manager->conversation, "Sending to service failed.");
     prv_conversation_updated(manager, true);
     return;
@@ -131,23 +131,23 @@ void conversation_manager_add_input(ConversationManager* manager, const char* in
 }
 
 void conversation_manager_add_action(ConversationManager* manager, ConversationAction* action) {
-  CLAWD_LOG(APP_LOG_LEVEL_DEBUG, "Adding action to conversation.");
+  SQUIRE_LOG(APP_LOG_LEVEL_DEBUG, "Adding action to conversation.");
   conversation_add_action(manager->conversation, action);
   prv_conversation_updated(manager, true);
 }
 
 void conversation_manager_add_widget(ConversationManager* manager, ConversationWidget* widget) {
-  CLAWD_LOG(APP_LOG_LEVEL_DEBUG, "Adding widget to conversation.");
+  SQUIRE_LOG(APP_LOG_LEVEL_DEBUG, "Adding widget to conversation.");
   conversation_add_widget(manager->conversation, widget);
   prv_conversation_updated(manager, true);
 }
 
 static void prv_handle_app_message_outbox_sent(DictionaryIterator *iterator, void *context) {
-  CLAWD_LOG(APP_LOG_LEVEL_INFO, "Sent message successfully.");
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Sent message successfully.");
 }
 
 static void prv_handle_app_message_outbox_failed(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
-  CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Sending message failed: %d", reason);
+  SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Sending message failed: %d", reason);
   ConversationManager* manager = context;
   conversation_add_error(manager->conversation, "Sending to service failed.");
   prv_conversation_updated(manager, true);
@@ -160,7 +160,7 @@ static void prv_handle_app_message_inbox_received(DictionaryIterator *iter, void
       bool added_entry = conversation_add_response_fragment(manager->conversation, tuple->value->cstring);
       prv_conversation_updated(manager, added_entry);
     } else if (tuple->key == MESSAGE_KEY_FUNCTION) {
-      CLAWD_LOG(APP_LOG_LEVEL_INFO, "Received function: \"%s\".", tuple->value->cstring);
+      SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Received function: \"%s\".", tuple->value->cstring);
       conversation_complete_response(manager->conversation);
       prv_conversation_updated(manager, false);
       conversation_add_thought(manager->conversation, tuple->value->cstring);
@@ -221,13 +221,13 @@ static void prv_handle_app_message_inbox_received(DictionaryIterator *iter, void
 // Helper macro to safely get dict value or return early (for void functions)
 #define DICT_GET_INT32(iter, key, var) do { \
   Tuple *t = dict_find((iter), (key)); \
-  if (!t) { CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Missing key %d", (key)); return; } \
+  if (!t) { SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Missing key %d", (key)); return; } \
   (var) = t->value->int32; \
 } while(0)
 
 #define DICT_GET_CSTRING(iter, key, var) do { \
   Tuple *t = dict_find((iter), (key)); \
-  if (!t) { CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Missing key %d", (key)); return; } \
+  if (!t) { SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Missing key %d", (key)); return; } \
   (var) = t->value->cstring; \
 } while(0)
 
@@ -323,7 +323,7 @@ static void prv_process_weather_widget(int widget_type, DictionaryIterator *iter
         Tuple *icon_tuple = dict_find(iter, MESSAGE_KEY_WEATHER_WIDGET_MULTI_ICON + i);
         Tuple *day_tuple = dict_find(iter, MESSAGE_KEY_WEATHER_WIDGET_MULTI_DAY + i);
         if (!high_tuple || !low_tuple || !icon_tuple || !day_tuple) {
-          CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Missing multi-day weather data for day %d", i);
+          SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Missing multi-day weather data for day %d", i);
           free(location_stored);
           return;
         }
@@ -347,7 +347,7 @@ static void prv_process_highlight_widget(int widget_type, DictionaryIterator *it
   }
   Tuple *number_tuple = dict_find(iter, MESSAGE_KEY_HIGHLIGHT_WIDGET_PRIMARY);
   if (!number_tuple) {
-    CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Missing HIGHLIGHT_WIDGET_PRIMARY");
+    SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Missing HIGHLIGHT_WIDGET_PRIMARY");
     return;
   }
   char *number = number_tuple->value->cstring;
@@ -381,7 +381,7 @@ static void prv_process_map_widget(int widget_type, DictionaryIterator *iter, Co
   Tuple *image_id_tuple = dict_find(iter, MESSAGE_KEY_MAP_WIDGET_IMAGE_ID);
   Tuple *user_loc_tuple = dict_find(iter, MESSAGE_KEY_MAP_WIDGET_USER_LOCATION);
   if (!image_id_tuple || !user_loc_tuple) {
-    CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Missing MAP_WIDGET keys");
+    SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Missing MAP_WIDGET keys");
     return;
   }
   int image_id = image_id_tuple->value->int32;
@@ -401,7 +401,7 @@ static void prv_process_map_widget(int widget_type, DictionaryIterator *iter, Co
 #endif
 
 static void prv_handle_app_message_inbox_dropped(AppMessageResult reason, void *context) {
-  CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Received message dropped: %d", reason);
+  SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Received message dropped: %d", reason);
   ConversationManager* manager = context;
   conversation_add_error(manager->conversation, "Response from service lost.");
   prv_conversation_updated(manager, true);
@@ -414,7 +414,7 @@ static void prv_conversation_updated(ConversationManager* manager, bool new_entr
 }
 
 static bool prv_handle_memory_pressure(void *context) {
-  CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Memory pressure detected.");
+  SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Memory pressure detected.");
   ConversationManager* manager = context;
   if (!manager->conversation) {
     return false;
@@ -422,7 +422,7 @@ static bool prv_handle_memory_pressure(void *context) {
   if (conversation_length(manager->conversation) <= 2) {
     return false;
   }
-  CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Deleting oldest entry from conversation.");
+  SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Deleting oldest entry from conversation.");
   if (manager->deletion_handler) {
     manager->deletion_handler(0, manager->context);
   }

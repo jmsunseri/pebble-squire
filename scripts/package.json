@@ -1,7 +1,7 @@
 {
-  "name": "clawd-scripts",
+  "name": "squire-scripts",
   "version": "1.0.0",
-  "description": "Build scripts for Clawd - Telegram bundle generation",
+  "description": "Build scripts for Squire - Telegram bundle generation",
   "private": true,
   "scripts": {
     "build:telegram": "node build-gramjs.js"

@@ -261,7 +261,7 @@ def get_commands(translate, element):
     if tag.startswith(xmlns):
         tag = tag[len(xmlns):]
 
-    if tag in ('g', 'layer'):
+    if tag in ('svg', 'g', 'layer'):
         # Process children
         for child in element:
             child_commands = get_commands(translate, child)

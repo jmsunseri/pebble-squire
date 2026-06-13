@@ -20,7 +20,7 @@
  */
 
 var SESSION_KEY = 'telegram_session';
-var BOT_USERNAME_KEY = 'openclaw_bot_username';
+var BOT_USERNAME_KEY = 'agent_telegram_username';
 
 /**
  * Save Telegram session to localStorage.
@@ -75,8 +75,8 @@ function hasSession() {
 }
 
 /**
- * Save the OpenClaw bot username.
- * @param {string} username - Bot username (e.g., "@OpenClawBot")
+ * Save the agent username.
+ * @param {string} username - Bot username (e.g., "@MyAgentBot")
  */
 function saveBotUsername(username) {
     try {
@@ -92,7 +92,7 @@ function saveBotUsername(username) {
 }
 
 /**
- * Get the OpenClaw bot username.
+ * Get the agent username.
  * @returns {string} The bot username or default
  */
 function getBotUsername() {
@@ -100,13 +100,13 @@ function getBotUsername() {
     if (!username) {
         // Get from clay-settings as fallback
         var settings = JSON.parse(localStorage.getItem('clay-settings')) || {};
-        username = settings.OPENCLAW_BOT || '@OpenClawBot';
+        username = settings.AGENT_TELEGRAM_USERNAME || '@MyAgentBot';
     }
     // Normalize
     if (username && !username.startsWith('@')) {
         username = '@' + username;
     }
-    return username || '@OpenClawBot';
+    return username || '@MyAgentBot';
 }
 
 /**

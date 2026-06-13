@@ -155,7 +155,7 @@ function handleAppMessage(e) {
 
 function doCobbleWarning() {
     if (window.cobble) {
-        console.log("WARNING: Running Clawd on Cobble is not supported, and has multiple known issues.");
+        console.log("WARNING: Running Squire on Cobble is not supported, and has multiple known issues.");
         Pebble.sendAppMessage({COBBLE_WARNING: 1});
     }
 }
@@ -165,7 +165,7 @@ Pebble.addEventListener("ready",
         // This happens before anything else because I don't trust Cobble to get through the normal flow,
         // given how many things bizarrely don't work.
         doCobbleWarning();
-        console.log("Clawd " + package_json['version']);
+        console.log("Squire " + package_json['version']);
 
         // Timeline token only available on real devices, not emulator
         if (Pebble.platform !== 'pypkjs' && Pebble.getTimelineToken) {

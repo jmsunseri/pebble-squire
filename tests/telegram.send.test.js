@@ -3,8 +3,8 @@ import 'dotenv/config';
 
 describe('Telegram send message', () => {
     it('should resolve bot username and send a message', async () => {
-        const botUsername = process.env.OPENCLAW_BOT;
-        if (!botUsername) throw new Error('Set OPENCLAW_BOT in .env');
+        const botUsername = process.env.AGENT_TELEGRAM_USERNAME;
+        if (!botUsername) throw new Error('Set AGENT_TELEGRAM_USERNAME in .env');
 
         const bundleLoader = require('../src/pkjs/lib/bundle_loader.js');
         bundleLoader.ensureTelegramBundle();
@@ -43,7 +43,7 @@ describe('Telegram send message', () => {
         expect(entity).not.toBeNull();
         expect(entity).not.toBeUndefined();
 
-        const result = await tgClient.sendMessage(entity, { message: 'test from clawd unit test' });
+        const result = await tgClient.sendMessage(entity, { message: 'test from squire unit test' });
         console.log('Message sent, id:', result ? result.id : 'unknown');
         expect(result).not.toBeNull();
 

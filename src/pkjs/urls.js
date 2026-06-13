@@ -15,8 +15,8 @@
  */
 
 /**
- * URLs module for Clawd.
- * All communication now goes directly through Telegram to OpenClaw.
+ * URLs module for Squire.
+ * All communication now goes directly through Telegram to your agent.
  * No backend URLs are needed - the phone app communicates directly.
  */
 

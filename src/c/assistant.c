@@ -76,7 +76,7 @@ static void prv_deinit(void) {
 
 int main(void) {
   VersionInfo version_info = version_get_current();
-  CLAWD_LOG(APP_LOG_LEVEL_INFO, "Clawd %d.%d", version_info.major, version_info.minor);
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Squire %d.%d", version_info.major, version_info.minor);
   prv_init();
   
   if (must_present_consent()) {

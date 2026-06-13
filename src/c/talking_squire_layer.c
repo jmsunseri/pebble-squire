@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "talking_lobster_layer.h"
+#include "talking_squire_layer.h"
 #include "util/perimeter.h"
 #include <pebble.h>
 
@@ -24,38 +24,38 @@ typedef struct {
   GPerimeter perimeter;
   Layer *layer;
   const char* text;
-  GDrawCommandImage* lobster;
+  GDrawCommandImage* squire;
   GSize text_size;
   GTextAttributes *text_attributes;
-} TalkingLobsterLayerData;
+} TalkingSquireLayerData;
 
 static void prv_update_layer(Layer *layer, GContext *ctx);
-static GTextAttributes *prv_create_text_attributes(TalkingLobsterLayer *layer);
+static GTextAttributes *prv_create_text_attributes(TalkingSquireLayer *layer);
 static GRangeHorizontal prv_perimeter_callback(const GPerimeter *perimeter, const GSize *ctx_size, GRangeVertical vertical_range, uint16_t inset);
 
 
-TalkingLobsterLayer *talking_lobster_layer_create(GRect frame) {
-  Layer *layer = blayer_create_with_data(frame, sizeof(TalkingLobsterLayerData));
-  TalkingLobsterLayerData *data = layer_get_data(layer);
+TalkingSquireLayer *talking_squire_layer_create(GRect frame) {
+  Layer *layer = blayer_create_with_data(frame, sizeof(TalkingSquireLayerData));
+  TalkingSquireLayerData *data = layer_get_data(layer);
   data->perimeter = (GPerimeter) { .callback = prv_perimeter_callback };
   data->layer = layer;
   data->text = NULL;
   data->text_size = GSizeZero;
-  data->lobster = bgdraw_command_image_create_with_resource(RESOURCE_ID_ROOT_SCREEN_LOBSTER);
+  data->squire = bgdraw_command_image_create_with_resource(RESOURCE_ID_ROOT_SCREEN_SQUIRE);
   data->text_attributes = prv_create_text_attributes(layer);
   layer_set_update_proc(layer, prv_update_layer);
   return layer;
 }
 
-void talking_lobster_layer_destroy(TalkingLobsterLayer *layer) {
-  TalkingLobsterLayerData *data = layer_get_data(layer);
-  gdraw_command_image_destroy(data->lobster);
+void talking_squire_layer_destroy(TalkingSquireLayer *layer) {
+  TalkingSquireLayerData *data = layer_get_data(layer);
+  gdraw_command_image_destroy(data->squire);
   graphics_text_attributes_destroy(data->text_attributes);
   layer_destroy(layer);
 }
 
-void talking_lobster_layer_set_text(TalkingLobsterLayer *layer, const char *text) {
-  TalkingLobsterLayerData *data = layer_get_data(layer);
+void talking_squire_layer_set_text(TalkingSquireLayer *layer, const char *text) {
+  TalkingSquireLayerData *data = layer_get_data(layer);
   data->text = text;
   GRect bounds = layer_get_bounds(layer);
   data->text_size = graphics_text_layout_get_content_size_with_attributes(text, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(0, 1, bounds.size.w - 23, bounds.size.h - 15), GTextOverflowModeWordWrap, GTextAlignmentLeft, data->text_attributes);
@@ -63,7 +63,7 @@ void talking_lobster_layer_set_text(TalkingLobsterLayer *layer, const char *text
 }
 
 static void prv_update_layer(Layer *layer, GContext *ctx) {
-  TalkingLobsterLayerData *data = layer_get_data(layer);
+  TalkingSquireLayerData *data = layer_get_data(layer);
   GRect bounds = layer_get_bounds(layer);
   GSize size = bounds.size;
 
@@ -72,17 +72,17 @@ static void prv_update_layer(Layer *layer, GContext *ctx) {
   const int bubble_width = size.w - 16 - available_space;
   const int corner_offset = 6;
 
-  // Lobster position
+  // Squire position
 #if defined(PBL_PLATFORM_EMERY)
-  const int lobster_height = 177;
-  const int lobster_width = 171;
-  const int lobster_x = 0;
-  const int lobster_y = size.h - lobster_height;
+  const int squire_height = 177;
+  const int squire_width = 171;
+  const int squire_x = 0;
+  const int squire_y = size.h - squire_height;
 #elif defined(PBL_PLATFORM_GABBRO)
-  const int lobster_height = 177;
-  const int lobster_width = 171;
-  const int lobster_x = (size.w - lobster_width) / 2;
-  const int lobster_y = size.h - lobster_height;
+  const int squire_height = 177;
+  const int squire_width = 171;
+  const int squire_x = (size.w - squire_width) / 2;
+  const int squire_y = size.h - squire_height;
 #endif
 
 #ifdef PBL_ROUND
@@ -91,9 +91,9 @@ static void prv_update_layer(Layer *layer, GContext *ctx) {
   const int bubble_x = 8 + available_space;
 #endif
 
-  // Position bubble just above the lobster on all platforms
+  // Position bubble just above the squire on all platforms
   const int bubble_overlap = 2;
-  const int speech_bubble_top = lobster_y - text_height + bubble_overlap;
+  const int speech_bubble_top = squire_y - text_height + bubble_overlap;
 
   GPath bubble_path = {
     .num_points = 8,
@@ -123,11 +123,11 @@ static void prv_update_layer(Layer *layer, GContext *ctx) {
   graphics_context_set_text_color(ctx, GColorBlack);
   GRect text_bounds = GRect(bubble_x + corner_offset + 2, speech_bubble_top + corner_offset - 5, data->text_size.w, data->text_size.h);
   graphics_draw_text(ctx, data->text, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), text_bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft, data->text_attributes);
-  gdraw_command_image_draw(ctx, data->lobster, GPoint(lobster_x, lobster_y));
+  gdraw_command_image_draw(ctx, data->squire, GPoint(squire_x, squire_y));
 }
 
-static GTextAttributes* prv_create_text_attributes(TalkingLobsterLayer *layer) {
-  TalkingLobsterLayerData *data = layer_get_data(layer);
+static GTextAttributes* prv_create_text_attributes(TalkingSquireLayer *layer) {
+  TalkingSquireLayerData *data = layer_get_data(layer);
   GTextAttributes *attributes = graphics_text_attributes_create();
   attributes->flow_data.perimeter.impl = &data->perimeter;
   attributes->flow_data.perimeter.inset = 0;
@@ -138,26 +138,26 @@ static GTextAttributes* prv_create_text_attributes(TalkingLobsterLayer *layer) {
 static GRangeHorizontal prv_perimeter_callback(const GPerimeter *perimeter, const GSize *ctx_size, GRangeVertical vertical_range, uint16_t inset) {
   // We don't get a reference to the original layer, but we do get this perimeter pointer. By putting the perimeter at
   // the top of the struct, we can make this cast and get away with it.
-  TalkingLobsterLayerData *data = (TalkingLobsterLayerData*)perimeter;
+  TalkingSquireLayerData *data = (TalkingSquireLayerData*)perimeter;
   Layer *layer = data->layer;
   GRect bounds = layer_get_bounds(layer);
-  // the lobster is drawn at the bottom-left of the layer
+  // the squire is drawn at the bottom-left of the layer
 #if defined(PBL_PLATFORM_EMERY)
-  const int16_t lobster_size = 177;
-  const int16_t lobster_y_offset = 0;
-  const int16_t lobster_x = 0;
+  const int16_t squire_size = 177;
+  const int16_t squire_y_offset = 0;
+  const int16_t squire_x = 0;
 #elif defined(PBL_PLATFORM_GABBRO)
-  const int16_t lobster_size = 177;
-  const int16_t lobster_y_offset = 0;
-  const int16_t lobster_x = (bounds.size.w - lobster_size) / 2;
+  const int16_t squire_size = 177;
+  const int16_t squire_y_offset = 0;
+  const int16_t squire_x = (bounds.size.w - squire_size) / 2;
 #endif
-  GPoint wrap_point = layer_convert_point_to_screen(layer, GPoint(lobster_x + lobster_size, bounds.size.h - lobster_size + lobster_y_offset));
-  // We know the lobster is at the bottom of our layer, so we don't bother worrying about text being rendered past it.
+  GPoint wrap_point = layer_convert_point_to_screen(layer, GPoint(squire_x + squire_size, bounds.size.h - squire_size + squire_y_offset));
+  // We know the squire is at the bottom of our layer, so we don't bother worrying about text being rendered past it.
   if (vertical_range.origin_y + vertical_range.size_h < wrap_point.y) {
     // nothing to do here - implement the inset while we're here, though.
     return (GRangeHorizontal) { .origin_x = inset, .size_w = ctx_size->w - inset * 2 };
   } else {
-    // The lobster is in the way, so we need to indent the text on the left.
+    // The squire is in the way, so we need to indent the text on the left.
     return (GRangeHorizontal) { .origin_x = wrap_point.x + inset, .size_w = ctx_size->w - wrap_point.x - inset * 2 };
   }
 }

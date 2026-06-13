@@ -21,7 +21,7 @@ module.exports = function(minified) {
     var disconnectBtn, pendingActionInput;
 
     var SESSION_KEY = 'telegram_session';
-    var BOT_USERNAME_KEY = 'openclaw_bot_username';
+    var BOT_USERNAME_KEY = 'agent_telegram_username';
 
     function setStatus(text, isError) {
         if (telegramStatusText) {
@@ -46,12 +46,12 @@ module.exports = function(minified) {
         var username = localStorage.getItem(BOT_USERNAME_KEY);
         try {
             var settings = JSON.parse(localStorage.getItem('clay-settings')) || {};
-            if (!username) { username = settings.OPENCLAW_BOT || '@OpenClawBot'; }
+            if (!username) { username = settings.AGENT_TELEGRAM_USERNAME || '@MyAgentBot'; }
         } catch (e) {
-            if (!username) { username = '@OpenClawBot'; }
+            if (!username) { username = '@MyAgentBot'; }
         }
         if (username && !username.startsWith('@')) { username = '@' + username; }
-        return username || '@OpenClawBot';
+        return username || '@MyAgentBot';
     }
 
     function saveBotUsername(username) {
@@ -102,7 +102,7 @@ module.exports = function(minified) {
         telegramStatusText = clayConfig.getItemById('telegramStatus');
         phoneInput = clayConfig.getItemByMessageKey('TELEGRAM_PHONE');
         codeInput = clayConfig.getItemByMessageKey('TELEGRAM_CODE');
-        botInput = clayConfig.getItemByMessageKey('OPENCLAW_BOT');
+        botInput = clayConfig.getItemByMessageKey('AGENT_TELEGRAM_USERNAME');
         disconnectBtn = clayConfig.getItemByMessageKey('TELEGRAM_DISCONNECT');
         pendingActionInput = clayConfig.getItemByMessageKey('TELEGRAM_PENDING_ACTION');
 

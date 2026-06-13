@@ -1,4 +1,4 @@
-// Telegram/GramJS bundle for Clawd (Pebblegram edition)
+// Telegram/GramJS bundle for Squire (Pebblegram edition)
 // Polyfills for JS runtimes without Web Crypto API, navigator, self, window.location, etc.
 // Pebble PKJS lacks: crypto, crypto.subtle, window.addEventListener, Response, self, navigator
 if (typeof globalThis === 'undefined') {
@@ -12,7 +12,7 @@ if (typeof window === 'undefined') {
     window.location = { protocol: 'https:' };
 }
 if (typeof navigator === 'undefined') {
-    globalThis.navigator = { onLine: true, userAgent: 'Clawd PKJS' };
+    globalThis.navigator = { onLine: true, userAgent: 'Squire PKJS' };
 }
 if (typeof self === 'undefined') {
     globalThis.self = globalThis;

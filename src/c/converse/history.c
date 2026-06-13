@@ -20,7 +20,7 @@ void history_add_prompt(const char* text) {
   strncpy(s_entries[s_count].text, text, sizeof(s_entries[s_count].text) - 1);
   s_entries[s_count].text[sizeof(s_entries[s_count].text) - 1] = '\0';
   s_count++;
-  CLAWD_LOG(APP_LOG_LEVEL_INFO, "History prompt %d: %.50s", s_count, text);
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "History prompt %d: %.50s", s_count, text);
 }
 
 void history_add_response(const char* text) {
@@ -29,13 +29,13 @@ void history_add_response(const char* text) {
   strncpy(s_entries[s_count].text, text, sizeof(s_entries[s_count].text) - 1);
   s_entries[s_count].text[sizeof(s_entries[s_count].text) - 1] = '\0';
   s_count++;
-  CLAWD_LOG(APP_LOG_LEVEL_INFO, "History response %d: %.50s", s_count, text);
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "History response %d: %.50s", s_count, text);
 }
 
 void history_set_thread_id(const char* thread_id) {
   strncpy(s_thread_id, thread_id, sizeof(s_thread_id) - 1);
   s_thread_id[sizeof(s_thread_id) - 1] = '\0';
-  CLAWD_LOG(APP_LOG_LEVEL_INFO, "History thread ID: %s", thread_id);
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "History thread ID: %s", thread_id);
 }
 
 static void prv_shift_if_full(void) {
@@ -55,7 +55,7 @@ void history_push_prompt(const char* text) {
   strncpy(s_entries[s_count].text, text, sizeof(s_entries[s_count].text) - 1);
   s_entries[s_count].text[sizeof(s_entries[s_count].text) - 1] = '\0';
   s_count++;
-  CLAWD_LOG(APP_LOG_LEVEL_INFO, "History push prompt %d: %.50s", s_count, text);
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "History push prompt %d: %.50s", s_count, text);
 }
 
 void history_push_response(const char* text) {
@@ -64,7 +64,7 @@ void history_push_response(const char* text) {
   strncpy(s_entries[s_count].text, text, sizeof(s_entries[s_count].text) - 1);
   s_entries[s_count].text[sizeof(s_entries[s_count].text) - 1] = '\0';
   s_count++;
-  CLAWD_LOG(APP_LOG_LEVEL_INFO, "History push response %d: %.50s", s_count, text);
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "History push response %d: %.50s", s_count, text);
 }
 
 void history_push_thread_id(const char* thread_id) {
@@ -73,7 +73,7 @@ void history_push_thread_id(const char* thread_id) {
 
 void history_set_done(void) {
   s_done = true;
-  CLAWD_LOG(APP_LOG_LEVEL_INFO, "History done. %d entries.", s_count);
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "History done. %d entries.", s_count);
 }
 
 bool history_is_available(void) {

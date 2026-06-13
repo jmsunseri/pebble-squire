@@ -141,7 +141,7 @@ static int prv_get_content_height(MessageLayer* layer) {
         for (int j = i - 1; j >= 0; --j) {
           if ((text+offset)[j] == ' ' || (text+offset)[j] == '-' || (text+offset)[j] == '\n') {
             i = j+1;
-//            CLAWD_LOG(APP_LOG_LEVEL_DEBUG, "New line starts \"%s\".", text+offset+i);
+//            SQUIRE_LOG(APP_LOG_LEVEL_DEBUG, "New line starts \"%s\".", text+offset+i);
             break;
           }
         }

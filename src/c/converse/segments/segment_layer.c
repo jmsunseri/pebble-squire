@@ -79,7 +79,7 @@ SegmentLayer* segment_layer_create(GRect rect, ConversationEntry* entry, bool as
   if (assistant_label) {
     data->assistant_label_layer = btext_layer_create(GRect(5, 0, rect.size.w, NAME_HEIGHT));
     layer_add_child(layer, text_layer_get_layer(data->assistant_label_layer));
-    text_layer_set_text(data->assistant_label_layer, "Clawd");
+    text_layer_set_text(data->assistant_label_layer, "Squire");
 #ifdef PBL_PLATFORM_GABBRO
     text_layer_set_text_alignment(data->assistant_label_layer, GTextAlignmentCenter);
 #endif
@@ -125,7 +125,7 @@ SegmentLayer* segment_layer_create(GRect rect, ConversationEntry* entry, bool as
 }
 
 void segment_layer_destroy(SegmentLayer* layer) {
-  CLAWD_LOG(APP_LOG_LEVEL_INFO, "destroying SegmentLayer %p.", layer);
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "destroying SegmentLayer %p.", layer);
   SegmentLayerData* data = layer_get_data(layer);
   switch (data->type) {
     case SegmentTypeNone:
@@ -231,6 +231,6 @@ static SegmentType prv_get_segment_type(ConversationEntry* entry) {
       }
       break;
   }
-  CLAWD_LOG(APP_LOG_LEVEL_WARNING, "Unknown entry type %d.", conversation_entry_get_type(entry));
+  SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Unknown entry type %d.", conversation_entry_get_type(entry));
   return SegmentTypeNone;
 }

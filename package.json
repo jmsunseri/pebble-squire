@@ -1,7 +1,7 @@
 {
-  "name": "Clawd",
+  "name": "Squire",
   "author": "Justin Sunseri",
-  "version": "1.4.0",
+  "version": "0.1.0",
   "keywords": [
     "pebble-app"
   ],
@@ -15,7 +15,7 @@
     "pebble-events": "^1.2.1"
   },
   "pebble": {
-    "displayName": "Clawd",
+    "displayName": "Squire",
     "uuid": "1d272bb4-cf00-4e3e-a7f3-7394309e0341",
     "sdkVersion": "3",
     "enableMultiJS": true,
@@ -95,7 +95,7 @@
       "TELEGRAM_SEND_CODE",
       "TELEGRAM_DISCONNECT",
       "TELEGRAM_PENDING_ACTION",
-      "OPENCLAW_BOT",
+      "AGENT_TELEGRAM_USERNAME",
       "HISTORY_PROMPT",
       "HISTORY_RESPONSE",
       "HISTORY_THREAD_ID",
@@ -130,13 +130,13 @@
           "type": "bitmap"
         },
         {
-          "file": "images_root_screen_lobster_large.pdc",
-          "name": "ROOT_SCREEN_LOBSTER",
+          "file": "images_root_screen_squire_large.pdc",
+          "name": "ROOT_SCREEN_SQUIRE",
           "type": "raw"
         },
         {
           "file": "images_sleeping_pony.pdc",
-          "name": "SLEEPING_LOBSTER",
+          "name": "SLEEPING_SQUIRE",
           "type": "raw"
         },
         {
@@ -156,17 +156,17 @@
         },
         {
           "file": "animations_tired_pony.pdcs",
-          "name": "TIRED_LOBSTER",
+          "name": "TIRED_SQUIRE",
           "type": "raw"
         },
         {
           "file": "animations_running_pony.pdcs",
-          "name": "RUNNING_LOBSTER",
+          "name": "RUNNING_SQUIRE",
           "type": "raw"
         },
         {
           "file": "images_failed_pony.pdc",
-          "name": "FAILED_LOBSTER",
+          "name": "FAILED_SQUIRE",
           "type": "raw"
         },
         {
@@ -180,8 +180,8 @@
           "type": "raw"
         },
         {
-          "file": "text_openclaw_consent.txt",
-          "name": "OPENCLAW_CONSENT_TEXT",
+          "file": "text_agent_consent.txt",
+          "name": "AGENT_CONSENT_TEXT",
           "type": "raw"
         },
         {

@@ -1,7 +1,7 @@
 [
     {
         "type": "heading",
-        "defaultValue": "Clawd",
+        "defaultValue": "Squire",
         "size": 1
     },
     {
@@ -16,7 +16,7 @@
                 "id": "languageCode",
                 "messageKey": "LANGUAGE_CODE",
                 "label": "Response language",
-                "description": "Controls the language of Clawd's replies. Does not currently translate the rest of the UI. If 'automatic', Clawd will attempt to respond in the same language the question was asked.",
+                "description": "Controls the language of Squire's replies. Does not currently translate the rest of the UI. If 'automatic', Squire will attempt to respond in the same language the question was asked.",
                 "defaultValue": "",
                 "options": [
                     {"label": "Automatic", "value": ""},
@@ -80,7 +80,7 @@
                 "type": "select",
                 "messageKey": "QUICK_LAUNCH_BEHAVIOUR",
                 "label": "Quick launch behaviour",
-                "description": "What to do when Clawd is launched via Quick Launch. If 'start conversation' is selected, Clawd will start listening immediately. If 'stay open' is chosen, Clawd will quit after a minute of inactivity. If 'open home screen' is chosen, Clawd will behave the same as if launched from the app launcher.",
+                "description": "What to do when Squire is launched via Quick Launch. If 'start conversation' is selected, Squire will start listening immediately. If 'stay open' is chosen, Squire will quit after a minute of inactivity. If 'open home screen' is chosen, Squire will behave the same as if launched from the app launcher.",
                 "defaultValue": "1",
                 "options": [
                     {"label": "Start conversation and time out", "value": "1"},
@@ -93,7 +93,7 @@
                 "messageKey": "CONFIRM_TRANSCRIPTS",
                 "defaultValue": false,
                 "label": "Confirm prompts before responding",
-                "description": "When enabled, after dictating to the watch, you'll always be asked to confirm your input before Clawd takes action. When disabled, Clawd will respond immediately to whatever was recognised."
+                "description": "When enabled, after dictating to the watch, you'll always be asked to confirm your input before Squire takes action. When disabled, Squire will respond immediately to whatever was recognised."
             }
         ]
     },
@@ -109,7 +109,7 @@
                 "messageKey": "LOCATION_ENABLED",
                 "defaultValue": true,
                 "label": "Allow location access",
-                "description": "Clawd can use your location to provide contextually relevant information, including local weather and transit as well as more broadly understanding your local context."
+                "description": "Squire can use your location to provide contextually relevant information, including local weather and transit as well as more broadly understanding your local context."
             }
         ]
     },
@@ -128,11 +128,11 @@
             },
             {
                 "type": "input",
-                "id": "openclawBot",
-                "messageKey": "OPENCLAW_BOT",
-                "label": "OpenClaw Bot Username",
-                "description": "Enter the username of your OpenClaw bot (e.g., @MyOpenClawBot)",
-                "defaultValue": "@OpenClawBot"
+                "id": "backendBot",
+                "messageKey": "AGENT_TELEGRAM_USERNAME",
+                "label": "Backend Bot Username",
+                "description": "Enter the username of your OpenClaw or Hermes bot (e.g., @MyOpenClawBot or @MyHermesBot). OpenClaw and Hermes are both supported.",
+                "defaultValue": "@MyAgentBot"
             },
             {
                 "type": "input",

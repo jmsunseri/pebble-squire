@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef TALKING_LOBSTER_LAYER_H
-#define TALKING_LOBSTER_LAYER_H
+#ifndef TALKING_SQUIRE_LAYER_H
+#define TALKING_SQUIRE_LAYER_H
 
 #include <pebble.h>
 
-typedef Layer TalkingLobsterLayer;
+typedef Layer TalkingSquireLayer;
 
-TalkingLobsterLayer *talking_lobster_layer_create(GRect frame);
-void talking_lobster_layer_destroy(TalkingLobsterLayer *layer);
-void talking_lobster_layer_set_text(TalkingLobsterLayer *layer, const char *text);
+TalkingSquireLayer *talking_squire_layer_create(GRect frame);
+void talking_squire_layer_destroy(TalkingSquireLayer *layer);
+void talking_squire_layer_set_text(TalkingSquireLayer *layer, const char *text);
 
-#endif //TALKING_LOBSTER_LAYER_H
+#endif //TALKING_SQUIRE_LAYER_H

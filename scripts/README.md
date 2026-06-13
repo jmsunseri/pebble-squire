@@ -1,6 +1,6 @@
 # Telegram Bundle Build Scripts
 
-This directory contains scripts for building the Telegram/GramJS bundle that's used by Clawd.
+This directory contains scripts for building the Telegram/GramJS bundle that's used by Squire.
 
 ## Files
 

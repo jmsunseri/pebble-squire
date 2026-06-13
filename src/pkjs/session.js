@@ -60,11 +60,11 @@ Session.prototype.run = function() {
     // Build the message with metadata
     var message = this.buildMessage();
 
-    // Send to OpenClaw bot via Telegram
-    this.sendToOpenClaw(message).catch(function(error) {
+    // Send to agent via Telegram
+    this.sendToAgent(message).catch(function(error) {
         console.error('Telegram session error:', error);
         self.enqueue({
-            CHAT: 'Error communicating with OpenClaw: ' + error.message
+            CHAT: 'Error communicating with agent: ' + error.message
         });
         self.enqueue({
             CHAT_DONE: true
@@ -134,7 +134,7 @@ Session.prototype.buildMessage = function() {
     }
 
     // Format the message
-    // OpenClaw expects metadata in a specific format
+    // The agent expects metadata in a specific format
     var formattedMessage = this.prompt;
     if (this.threadId) {
         formattedMessage = '[thread:' + this.threadId + '] ' + formattedMessage;
@@ -146,7 +146,7 @@ Session.prototype.buildMessage = function() {
     return formattedMessage;
 };
 
-Session.prototype.sendToOpenClaw = function(message) {
+Session.prototype.sendToAgent = function(message) {
     var self = this;
     var botUsername = telegram.getBotUsername();
 
@@ -191,7 +191,7 @@ Session.prototype.listenForResponse = function(client, botUsername, resolve, rej
     }
 
     var timeoutId = setTimeout(function() {
-        done({ complete: false, error: 'Timeout waiting for response from OpenClaw' });
+        done({ complete: false, error: 'Timeout waiting for response from agent' });
     }, timeout);
 
     if (typeof NewMessage !== 'undefined') {

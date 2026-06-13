@@ -38,7 +38,7 @@ function createAuthClient() {
     var apiHash = process.env.TELEGRAM_APP_HASH || '';
     var newClient = new TelegramClient(new StringSessionCls(''), apiId, apiHash, {
         connectionRetries: 5,
-        deviceModel: 'Clawd',
+        deviceModel: 'Squire',
         systemVersion: '1.0',
         appVersion: '1.0'
     });
@@ -101,7 +101,7 @@ function provideCode(code) {
         var StringSessionCls = StringSession;
         var signInClient = new TelegramClient(new StringSessionCls(authSession || ''), apiId, apiHash, {
             connectionRetries: 5,
-            deviceModel: 'Clawd',
+            deviceModel: 'Squire',
             systemVersion: '1.0',
             appVersion: '1.0'
         });
@@ -157,7 +157,7 @@ function providePassword(password) {
         var StringSessionCls = StringSession;
         var pwClient = new TelegramClient(new StringSessionCls(authSession), apiId, apiHash, {
             connectionRetries: 5,
-            deviceModel: 'Clawd',
+            deviceModel: 'Squire',
             systemVersion: '1.0',
             appVersion: '1.0'
         });

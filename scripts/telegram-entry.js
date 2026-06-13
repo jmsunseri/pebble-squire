@@ -1,5 +1,5 @@
 // Minimal entry point for tree-shaking Telegram bundle
-// Only export what Clawd actually uses
+// Only export what Squire actually uses
 
 export { TelegramClient, Api } from 'telegram';
 export { StringSession } from 'telegram/sessions';

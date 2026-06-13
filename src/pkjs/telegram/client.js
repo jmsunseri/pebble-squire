@@ -54,7 +54,7 @@ function initClient() {
                 var stringSession = new StringSession(storedSession || '');
                 client = new TelegramClient(stringSession, apiId || 0, apiHash, {
                     connectionRetries: 5,
-                    deviceModel: 'Clawd',
+                    deviceModel: 'Squire',
                     systemVersion: '1.0',
                     appVersion: '1.0',
                 });

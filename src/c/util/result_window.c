@@ -73,7 +73,7 @@ static void prv_window_load(Window* window) {
   GRect bounds = layer_get_bounds(root_layer);
 
   data->status_bar = bstatus_bar_layer_create();
-  clawd_status_bar_result_pane_config(data->status_bar);
+  squire_status_bar_result_pane_config(data->status_bar);
 #ifdef PBL_COLOR
   status_bar_layer_set_colors(data->status_bar, data->background_color, gcolor_legible_over(data->background_color));
 #endif

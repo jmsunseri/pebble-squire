@@ -18,7 +18,7 @@
 #include <pebble-events/pebble-events.h>
 
 #include "root_window.h"
-#include "talking_lobster_layer.h"
+#include "talking_squire_layer.h"
 #include "converse/session_window.h"
 #include "converse/history.h"
 #include "menus/about_window.h"
@@ -49,10 +49,10 @@ struct RootWindow {
   GBitmap* question_icon;
   GBitmap* dictation_icon;
   GBitmap* more_icon;
-  TalkingLobsterLayer* talking_lobster_layer;
+  TalkingSquireLayer* talking_squire_layer;
   EventHandle app_message_handle;
   char** sample_prompts;
-  bool talking_lobster_overridden;
+  bool talking_squire_overridden;
 };
 
 static void prv_window_load(Window* window);
@@ -114,19 +114,19 @@ static void prv_window_appear(Window* window) {
   action_bar_layer_add_to_window(rw->action_bar, window);
   action_bar_layer_set_click_config_provider(rw->action_bar, prv_click_config_provider);
 #ifdef PBL_ROUND
-  rw->talking_lobster_layer = talking_lobster_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
+  rw->talking_squire_layer = talking_squire_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
 #else
-  rw->talking_lobster_layer = talking_lobster_layer_create(GRect(0, 0, bounds.size.w - ACTION_BAR_WIDTH, bounds.size.h));
+  rw->talking_squire_layer = talking_squire_layer_create(GRect(0, 0, bounds.size.w - ACTION_BAR_WIDTH, bounds.size.h));
 #endif
-  layer_add_child(window_get_root_layer(rw->window), (Layer *)rw->talking_lobster_layer);
-  rw->talking_lobster_overridden = false;
+  layer_add_child(window_get_root_layer(rw->window), (Layer *)rw->talking_squire_layer);
+  rw->talking_squire_overridden = false;
   const char* greeting = PRV_GREETINGS[rand() % PRV_GREETINGS_COUNT];
-  talking_lobster_layer_set_text(rw->talking_lobster_layer, greeting);
+  talking_squire_layer_set_text(rw->talking_squire_layer, greeting);
 
   if (!rw->app_message_handle) {
     rw->app_message_handle = events_app_message_register_inbox_received(prv_app_message_handler, rw);
   }
-  CLAWD_LOG(APP_LOG_LEVEL_DEBUG, "Window appeared. Heap usage increased %d bytes", heap_size - heap_bytes_free());
+  SQUIRE_LOG(APP_LOG_LEVEL_DEBUG, "Window appeared. Heap usage increased %d bytes", heap_size - heap_bytes_free());
 }
 
 static void prv_window_disappear(Window* window) {
@@ -139,8 +139,8 @@ static void prv_window_disappear(Window* window) {
   gbitmap_destroy(rw->question_icon);
   gbitmap_destroy(rw->dictation_icon);
   gbitmap_destroy(rw->more_icon);
-  talking_lobster_layer_destroy(rw->talking_lobster_layer);
-  CLAWD_LOG(APP_LOG_LEVEL_DEBUG, "Window disappeared. Heap usage decreased %d bytes", heap_bytes_free() - heap_size);
+  talking_squire_layer_destroy(rw->talking_squire_layer);
+  SQUIRE_LOG(APP_LOG_LEVEL_DEBUG, "Window disappeared. Heap usage decreased %d bytes", heap_bytes_free() - heap_size);
 }
 
 static void prv_app_message_handler(DictionaryIterator *iter, void *context) {
@@ -150,9 +150,9 @@ static void prv_app_message_handler(DictionaryIterator *iter, void *context) {
     return;
   }
   if (tuple->value->int32 == 1) {
-    rw->talking_lobster_overridden = true;
-    talking_lobster_layer_set_text(rw->talking_lobster_layer, "Uh oh!");
-    window_set_background_color(rw->window, COLOR_FALLBACK(GColorRed, GColorDarkGray));
+    rw->talking_squire_overridden = true;
+    talking_squire_layer_set_text(rw->talking_squire_layer, "Uh oh!");
+    window_set_background_color(rw->window, COLOR_FALLBACK(GColorBabyBlueEyes, GColorDarkGray));
     vibe_haptic_feedback();
   }
 }

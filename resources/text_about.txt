@@ -1,6 +1,6 @@
-# Clawd
+# Squire
 ## Version %d.%d
-Your AI assistant lobster (forked from Bobby for more claw powers)
+Your AI assistant squire (forked from Bobby for more helpful powers)
 
 ## Original Project
 Based on Bobby by Katharine Berry

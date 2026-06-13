@@ -16,7 +16,7 @@
 
 /**
  * Message handling for Telegram communication.
- * Sends messages to OpenClaw bot and handles responses.
+ * Sends messages to agent and handles responses.
  */
 
 var client = require('./client');
@@ -26,7 +26,7 @@ var telegramSession = require('./session');
 var messageHandlers = [];
 
 /**
- * Send a message to the OpenClaw bot.
+ * Send a message to the agent.
  * @param {string} message - The message to send
  * @param {string} botUsername - Optional bot username override
  * @returns {Promise<object>} Result with message ID
@@ -56,7 +56,7 @@ function sendMessage(message, botUsername) {
 }
 
 /**
- * Register a handler for incoming messages from OpenClaw bot.
+ * Register a handler for incoming messages from agent.
  * @param {function} handler - Handler function(message)
  * @returns {function} Unsubscribe function
  */
@@ -72,7 +72,7 @@ function onMessage(handler) {
 }
 
 /**
- * Start listening for messages from the OpenClaw bot.
+ * Start listening for messages from the agent.
  * @param {string} botUsername - Optional bot username to filter messages
  */
 function startListening(botUsername) {
@@ -100,7 +100,7 @@ function startListening(botUsername) {
                     var fromBot = checkIfFromBot(senderId, botUsername);
 
                     if (fromBot) {
-                        console.log('Received message from OpenClaw bot');
+                        console.log('Received message from agent');
                         handleIncomingMessage(message.message);
                     }
                 }
@@ -123,7 +123,7 @@ function startListening(botUsername) {
 function checkIfFromBot(senderId, botUsername) {
     // This would need to resolve the sender ID to a username
     // For now, we'll track the bot by ID after first contact
-    var cachedBotId = localStorage.getItem('openclaw_bot_id');
+    var cachedBotId = localStorage.getItem('agent_telegram_id');
     if (cachedBotId) {
         return senderId && senderId.userId === cachedBotId;
     }
@@ -198,7 +198,7 @@ function sendAndWaitForResponse(message, timeout, botUsername) {
 }
 
 /**
- * Send a streaming request to OpenClaw bot.
+ * Send a streaming request to agent.
  * This handles the back-and-forth for tool calls.
  * @param {string} prompt - The initial prompt
  * @param {function} onText - Callback for text chunks
@@ -209,7 +209,7 @@ function sendAndWaitForResponse(message, timeout, botUsername) {
 function sendStreamingRequest(prompt, onText, onToolCall, onComplete, botUsername) {
     botUsername = botUsername || telegramSession.getBotUsername();
 
-    // The OpenClaw bot should respond with streaming-style messages
+    // The agent should respond with streaming-style messages
     // We'll need to handle multiple messages for streaming
 
     var fullResponse = '';
@@ -218,7 +218,7 @@ function sendStreamingRequest(prompt, onText, onToolCall, onComplete, botUsernam
     var unsubscribe = onMessage(function(message) {
         messageCount++;
 
-        // Parse the message format from OpenClaw
+        // Parse the message format from the agent
         // Expected format:
         // "c:text" for text content
         // "f:tool_call" for function/tool call

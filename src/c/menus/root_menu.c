@@ -64,7 +64,7 @@ void root_menu_window_push() {
 }
 
 static void prv_window_load(Window* window) {
-  CLAWD_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "Loading root menu window...");
+  SQUIRE_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "Loading root menu window...");
   // Load icons if not already loaded
   for (int i = 0; i < NUM_MENU_ITEMS; i++) {
     if (s_menu_items[i].icon == NULL) {
@@ -76,7 +76,7 @@ static void prv_window_load(Window* window) {
   Layer* root_layer = window_get_root_layer(window);
   GRect window_bounds = layer_get_frame(root_layer);
   data->status_bar = bstatus_bar_layer_create();
-  clawd_status_bar_config(data->status_bar);
+  squire_status_bar_config(data->status_bar);
   layer_add_child(root_layer, status_bar_layer_get_layer(data->status_bar));
 
   GRect menu_frame = GRect(0, STATUS_BAR_LAYER_HEIGHT, window_bounds.size.w, window_bounds.size.h - STATUS_BAR_LAYER_HEIGHT);
@@ -92,7 +92,7 @@ static void prv_window_load(Window* window) {
 #endif
   layer_add_child(root_layer, menu_layer_get_layer(data->menu_layer));
   menu_layer_set_click_config_onto_window(data->menu_layer, window);
-  CLAWD_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "Root menu window loaded");
+  SQUIRE_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "Root menu window loaded");
 }
 
 static void prv_window_unload(Window* window) {
