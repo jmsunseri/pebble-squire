@@ -72,7 +72,12 @@ static void prv_window_load(Window* window) {
   scroll_layer_set_click_config_onto_window(data->scroll_layer, window);
   layer_add_child(root_layer, scroll_layer_get_layer(data->scroll_layer));
 
-  data->text_layer = formatted_text_layer_create(GRect(5, 0, window_bounds.size.w - 10, 10000));
+#ifdef PBL_PLATFORM_GABBRO
+  const int16_t text_margin = 20;
+#else
+  const int16_t text_margin = 5;
+#endif
+  data->text_layer = formatted_text_layer_create(GRect(text_margin, 0, window_bounds.size.w - text_margin * 2, 10000));
   formatted_text_layer_set_text_alignment(data->text_layer, GTextAlignmentCenter);
   formatted_text_layer_set_text_color(data->text_layer, gcolor_legible_over(BRANDED_BACKGROUND_COLOUR));
   formatted_text_layer_set_text(data->text_layer, data->about_text);

@@ -55,13 +55,18 @@ static void prv_window_load(Window* window) {
  data->status_bar = bstatus_bar_layer_create();
  squire_status_bar_config(data->status_bar);
  layer_add_child(root_layer, status_bar_layer_get_layer(data->status_bar));
- data->scroll_layer = bscroll_layer_create(GRect(0, STATUS_BAR_LAYER_HEIGHT, window_bounds.size.w, window_bounds.size.h - STATUS_BAR_LAYER_HEIGHT));
- scroll_layer_set_shadow_hidden(data->scroll_layer, true);
- scroll_layer_set_click_config_onto_window(data->scroll_layer, window);
- layer_add_child(root_layer, scroll_layer_get_layer(data->scroll_layer));
-  data->text_layer = formatted_text_layer_create(GRect(5, 0, window_bounds.size.w - 10, 10000));
+  data->scroll_layer = bscroll_layer_create(GRect(0, STATUS_BAR_LAYER_HEIGHT, window_bounds.size.w, window_bounds.size.h - STATUS_BAR_LAYER_HEIGHT));
+  scroll_layer_set_shadow_hidden(data->scroll_layer, true);
+  scroll_layer_set_click_config_onto_window(data->scroll_layer, window);
+  layer_add_child(root_layer, scroll_layer_get_layer(data->scroll_layer));
 #ifdef PBL_PLATFORM_GABBRO
-  formatted_text_layer_set_text_alignment(data->text_layer, GTextAlignmentCenter);
+  const int16_t text_margin = 20;
+#else
+  const int16_t text_margin = 5;
+#endif
+   data->text_layer = formatted_text_layer_create(GRect(text_margin, 0, window_bounds.size.w - text_margin * 2, 10000));
+#ifdef PBL_PLATFORM_GABBRO
+   formatted_text_layer_set_text_alignment(data->text_layer, GTextAlignmentCenter);
 #endif
   formatted_text_layer_set_text(data->text_layer, data->legal_text);
  GSize text_size = formatted_text_layer_get_content_size(data->text_layer);
