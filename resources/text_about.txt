@@ -1,6 +1,6 @@
 # Squire
 ## Version %d.%d
-Your AI assistant squire (forked from Bobby for more helpful powers)
+Your AI assistant squire (forked from Bobby for agentic superpowers)
 
 ## Original Project
 Based on Bobby by Katharine Berry
