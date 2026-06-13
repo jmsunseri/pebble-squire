@@ -76,6 +76,24 @@ function initClient() {
                     isConnected = true;
                     console.log('[client] Telegram client connected successfully');
                     console.log('[client] Client details - connected: ' + client.connected + ', session DC: ' + (client.session && client.session.dcId ? client.session.dcId : 'unknown'));
+                    if (typeof NewMessage !== 'undefined') {
+                        try {
+                            client.addEventHandler(function(event) {
+                                try {
+                                    var msg = event.message;
+                                    if (!msg || !msg.message) return;
+                                    console.log('[client] global raw message out=', msg.out, 'id=', msg.id, 'text=', msg.message.substring(0, 50));
+                                } catch (err) {
+                                    console.error('[client] Error in global message handler:', err);
+                                }
+                            }, new NewMessage({}));
+                            console.log('[client] Global NewMessage event handler registered');
+                        } catch (err) {
+                            console.error('[client] Failed to register global NewMessage handler:', err);
+                        }
+                    } else {
+                        console.log('[client] NewMessage not available for global handler');
+                    }
                     return storedSession ? client.isUserAuthorized() : null;
                 }).then(function(authorized) {
                     if (authCheckDone) return;

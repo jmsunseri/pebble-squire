@@ -131,24 +131,42 @@ Session.prototype.listenForResponse = function(client, resolve, reject) {
         resolve(result);
     }
 
+    function fail(error) {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(timeoutId);
+        reject(error);
+    }
+
     var timeoutId = setTimeout(function() {
-        done({ complete: false, error: 'Timeout waiting for response from agent' });
+        fail(new Error('Timeout waiting for response from agent'));
     }, timeout);
 
+    console.log('[session] listenForResponse registering handler, NewMessage available: ' + (typeof NewMessage !== 'undefined'));
+
     if (typeof NewMessage !== 'undefined') {
-        client.addEventHandler(function(event) {
-            try {
-                if (resolved) return;
-                var msg = event.message;
-                if (!msg || !msg.message) return;
-                if (processedIds[msg.id]) return;
-                processedIds[msg.id] = true;
-                console.log('[session] raw message out=', msg.out, 'id=', msg.id, 'text=', formatLoggedMessage(msg.message));
-                self.handleIncomingMessage(msg.message, done);
-            } catch (err) {
-                console.error('[session] Error handling message:', err);
-            }
-        }, new NewMessage({}));
+        try {
+            client.addEventHandler(function(event) {
+                try {
+                    if (resolved) return;
+                    var msg = event.message;
+                    if (!msg || !msg.message) return;
+                    if (processedIds[msg.id]) return;
+                    processedIds[msg.id] = true;
+                    console.log('[session] raw message out=', msg.out, 'id=', msg.id, 'text=', formatLoggedMessage(msg.message));
+                    self.handleIncomingMessage(msg.message, done);
+                } catch (err) {
+                    console.error('[session] Error handling message:', err);
+                }
+            }, new NewMessage({}));
+            console.log('[session] Event handler registered successfully');
+        } catch (err) {
+            console.error('[session] Failed to register event handler:', err);
+            fail(new Error('Failed to register Telegram event handler'));
+        }
+    } else {
+        console.error('[session] NewMessage is undefined, cannot register event handler');
+        fail(new Error('Telegram event support not available'));
     }
 };
 
