@@ -143,6 +143,8 @@ Session.prototype.listenForResponse = function(client, botUsername, resolve, rej
                 if (resolved) return;
                 var msg = event.message;
                 if (!msg || !msg.message) return;
+                // Ignore the user's own outgoing messages (Telegram echoes them back)
+                if (msg.out === true) return;
                 if (processedIds[msg.id]) return;
                 processedIds[msg.id] = true;
                 self.handleIncomingMessage(msg.message, done);
@@ -188,79 +190,18 @@ Session.prototype.pollForMessages = function(client, botUsername, startTime, tim
 };
 
 Session.prototype.handleIncomingMessage = function(message, resolve) {
-    // Note: live bot responses should not contain the <system> prompt or ---METADATA--- block,
-    // since those are only in outgoing user messages. If they do, the backend is echoing them.
     console.log('Received message:', message.substring(0, 100));
 
-    // Parse the message format:
-    // "c:text" - content (streamed, expect "d:" later)
-    // "f:tool_call" - function call
-    // "d:" - done (end of streamed response)
-    // "t:thread_id" - thread ID
-    // "w:warning" - warning
-    // Plain text - complete response (no streaming)
-
-    if (message.startsWith('c:')) {
-        var content = message.substring(1);
-        var widgetRegex = /<<!!WIDGET:(.+?)!!>>/;
-        var match;
-
-        while (content.length > 0) {
-            match = widgetRegex.exec(content);
-            if (!match) {
-                break;
-            }
-
-            var widget = match[1];
-            console.log("Widget found: " + widget);
-            var start = match.index;
-            if (start !== 0) {
-                this.enqueue({
-                    CHAT: content.substring(0, start)
-                });
-            }
-            this.processWidget(widget);
-            this.hasOpenDialog = false;
-            content = content.substring(match.index + match[0].length);
-        }
-
-        if (content.length > 0) {
-            this.hasOpenDialog = true;
-            this.enqueue({
-                CHAT: content
-            });
-        }
-    } else if (message.startsWith('d:')) {
-        this.hasOpenDialog = false;
-        this.enqueue({
-            CHAT_DONE: true
-        });
-        if (LOGGING_ENABLED) {
-            console.log(JSON.stringify(messageQueue.getLog()));
-            messageQueue.stopLogging();
-        }
-        resolve({ complete: true });
-    } else if (message.startsWith('t:')) {
-        this.enqueue({
-            THREAD_ID: message.substring(1)
-        });
-    } else if (message.startsWith('w:')) {
-        this.enqueue({
-            WARNING: message.substring(1)
-        });
-    } else if (message.startsWith('a:')) {
-        actions.handleAction(this, { send: function() {} }, message.substring(1));
-    } else {
-        this.hasOpenDialog = true;
-        this.enqueue({
-            CHAT: message
-        });
-        this.hasOpenDialog = false;
-        this.enqueue({
-            CHAT_DONE: true
-        });
-        resolve({ complete: true });
-    }
+    // Non-streaming mode: a single plain-text message is the complete response.
+    this.hasOpenDialog = true;
+    this.enqueue({
+        CHAT: message
+    });
+    this.hasOpenDialog = false;
+    this.enqueue({
+        CHAT_DONE: true
+    });
+    resolve({ complete: true });
 };
 
 Session.prototype.processWidget = function(widgetData) {

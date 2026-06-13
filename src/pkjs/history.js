@@ -55,26 +55,8 @@ function fetchAndSendHistory() {
                         historyEntries.push({ type: 'prompt', text: promptText });
                     }
                 } else {
-                    var responseText = text;
-                    if (responseText.startsWith('c:')) {
-                        responseText = responseText.substring(2);
-                    } else if (responseText.startsWith('d:')) {
-                        continue;
-                    } else if (responseText.startsWith('t:')) {
-                        continue;
-                    } else if (responseText.startsWith('w:')) {
-                        continue;
-                    } else if (responseText.startsWith('f:')) {
-                        continue;
-                    } else if (responseText.startsWith('a:')) {
-                        continue;
-                    }
-                    var widgetIdx = responseText.indexOf('<<!!WIDGET:');
-                    if (widgetIdx !== -1) {
-                        responseText = responseText.substring(0, widgetIdx).trim();
-                    }
-                    if (responseText.length > 0) {
-                        historyEntries.push({ type: 'response', text: responseText });
+                    if (text.length > 0) {
+                        historyEntries.push({ type: 'response', text: text });
                     }
                 }
             }
