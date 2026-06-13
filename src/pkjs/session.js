@@ -135,7 +135,7 @@ Session.prototype.buildMessage = function() {
 
     // Format the message
     // The agent expects metadata in a specific format
-    var systemPrompt = 'Respond concisely for a tiny smartwatch screen. Keep answers brief but include important details. The user is looking at their watch and waiting, so prioritize speed.';
+    var systemPrompt = '<system>Respond concisely for a tiny smartwatch screen. Keep answers brief but include important details. The user is looking at their watch and waiting, so prioritize speed.</system>';
     var formattedMessage = this.prompt + '\n\n' + systemPrompt;
     if (this.threadId) {
         formattedMessage = '[thread:' + this.threadId + '] ' + formattedMessage;
@@ -246,6 +246,10 @@ Session.prototype.pollForMessages = function(client, botUsername, startTime, tim
 };
 
 Session.prototype.handleIncomingMessage = function(message, resolve) {
+    // Strip system prompt and metadata from incoming responses/history so they are never displayed
+    message = message.replace(/<system>.*?<\/system>/g, '');
+    message = message.replace(/\n*---METADATA---\n[\s\S]*/, '');
+    message = message.trim();
     console.log('Received message:', message.substring(0, 100));
 
     // Parse the message format:
@@ -369,6 +373,10 @@ Session.prototype.runLegacy = function() {
 
 Session.prototype.handleLegacyMessage = function(event) {
     var message = event.data;
+    // Strip system prompt and metadata from legacy responses so they are never displayed
+    message = message.replace(/<system>.*?<\/system>/g, '');
+    message = message.replace(/\n*---METADATA---\n[\s\S]*/, '');
+    message = message.trim();
     console.log(message);
 
     if (message[0] == 'c') {
