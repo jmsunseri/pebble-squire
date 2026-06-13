@@ -130,7 +130,7 @@
                 "type": "input",
                 "id": "backendBot",
                 "messageKey": "AGENT_TELEGRAM_USERNAME",
-                "label": "Backend Bot Username",
+                "label": "Agent Bot Username",
                 "description": "Enter the username of your OpenClaw or Hermes bot (e.g., @MyOpenClawBot or @MyHermesBot). OpenClaw and Hermes are both supported.",
                 "defaultValue": "@MyAgentBot"
             },
