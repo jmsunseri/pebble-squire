@@ -46,10 +46,6 @@ function fetchAndSendHistory() {
 
                 if (isOwn) {
                     var promptText = text;
-                    var metaIdx = promptText.indexOf('\n\n---METADATA---\n');
-                    if (metaIdx !== -1) {
-                        promptText = promptText.substring(0, metaIdx);
-                    }
                     if (promptText.indexOf('[thread:') === 0) {
                         promptText = promptText.substring(promptText.indexOf('] ') + 2);
                     }

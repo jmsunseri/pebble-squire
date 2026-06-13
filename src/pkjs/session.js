@@ -73,76 +73,18 @@ Session.prototype.run = function() {
 };
 
 Session.prototype.buildMessage = function() {
-    var settings = getSettings();
-    var metadata = {
-        tzOffset: -(new Date()).getTimezoneOffset(),
-        actions: actions.getSupportedActions(),
-        widgets: ['weather', 'number'],
-        units: settings['UNIT_PREFERENCE'] || '',
-        lang: settings['LANGUAGE_CODE'] || '',
-        version: package_json['version'],
-        bot: telegram.getBotUsername()
-    };
-
-    // Add location if available
+    var tzOffset = -(new Date()).getTimezoneOffset();
+    var locationLine = '';
     if (location.isReady() && config.isLocationEnabled()) {
         var loc = location.getPos();
-        metadata.lon = loc.lon;
-        metadata.lat = loc.lat;
-    } else {
-        metadata.location = 'unknown';
+        locationLine = ' The user is located at lat ' + loc.lat + ', lon ' + loc.lon + '.';
     }
 
-    // Add screen info
-    if (typeof Pebble !== 'undefined' && Pebble.getActiveWatchInfo) {
-        var platform = Pebble.getActiveWatchInfo().platform;
-        var supportsColour, screenWidth, screenHeight;
-        switch (platform) {
-            case 'aplite':
-                supportsColour = false;
-                screenWidth = 144;
-                screenHeight = 168;
-                break;
-            case 'basalt':
-                supportsColour = true;
-                screenWidth = 144;
-                screenHeight = 168;
-                break;
-            case 'chalk':
-                supportsColour = true;
-                screenWidth = 180;
-                screenHeight = 180;
-                break;
-            case 'diorite':
-                supportsColour = false;
-                screenWidth = 144;
-                screenHeight = 168;
-                break;
-            case 'emery':
-                supportsColour = true;
-                screenWidth = 200;
-                screenHeight = 228;
-                break;
-            default:
-                supportsColour = false;
-                screenWidth = 144;
-                screenHeight = 168;
-        }
-        metadata.supportsColour = supportsColour;
-        metadata.screenWidth = screenWidth;
-        metadata.screenHeight = screenHeight;
-    }
-
-    // Format the message
-    // The agent expects metadata in a specific format
-    var systemPrompt = '<system>Respond concisely for a tiny smartwatch screen. Keep answers brief but include important details. The user is looking at their watch and waiting, so prioritize speed.</system>';
+    var systemPrompt = '<system>Respond concisely for a tiny smartwatch screen. Keep answers brief but include important details. The user is looking at their watch and waiting, so prioritize speed. The user timezone offset is ' + tzOffset + ' minutes from UTC.' + locationLine + '</system>';
     var formattedMessage = systemPrompt + '\n\n' + this.prompt.trim();
     if (this.threadId) {
         formattedMessage = '[thread:' + this.threadId + '] ' + formattedMessage;
     }
-
-    // Append metadata as JSON
-    formattedMessage += '\n\n---METADATA---\n' + JSON.stringify(metadata);
 
     return formattedMessage;
 };
