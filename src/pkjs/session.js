@@ -111,14 +111,14 @@ Session.prototype.sendViaGramJS = function(message, botUsername, resolve, reject
         return tgClient.sendMessage(cleanUsername, { message: message });
     }).then(function(result) {
         console.log('[session] Message sent to', botUsername, 'id:', result ? result.id : 'unknown');
-        self.listenForResponse(telegram.getClient(), resolve, reject);
+        self.listenForResponse(telegram.getClient(), cleanUsername, resolve, reject);
     }).catch(function(error) {
         console.error('[session] GramJS error:', error);
         reject(error);
     });
 };
 
-Session.prototype.listenForResponse = function(client, resolve, reject) {
+Session.prototype.listenForResponse = function(client, botUsername, resolve, reject) {
     var self = this;
     var timeout = 120000;
     var resolved = false;
@@ -158,8 +158,8 @@ Session.prototype.listenForResponse = function(client, resolve, reject) {
                 } catch (err) {
                     console.error('[session] Error handling message:', err);
                 }
-            }, new NewMessage({}));
-            console.log('[session] Event handler registered successfully');
+            }, new NewMessage({ incoming: true }));
+            console.log('[session] Event handler registered successfully (incoming only)');
         } catch (err) {
             console.error('[session] Failed to register event handler:', err);
             fail(new Error('Failed to register Telegram event handler'));
@@ -168,6 +168,62 @@ Session.prototype.listenForResponse = function(client, resolve, reject) {
         console.error('[session] NewMessage is undefined, cannot register event handler');
         fail(new Error('Telegram event support not available'));
     }
+
+    // Fallback: poll the chat since NewMessage events are unreliable on Pebble.
+    self.pollForMessages(client, botUsername, Date.now(), timeoutId, done, processedIds);
+};
+
+Session.prototype.pollForMessages = function(client, botUsername, startTime, timeoutId, done, processedIds) {
+    var self = this;
+    var pollInterval = 2000;
+    var stopped = false;
+
+    function stop() {
+        stopped = true;
+        clearTimeout(timeoutId);
+    }
+
+    var originalDone = done;
+    done = function(result) {
+        stop();
+        originalDone(result);
+    };
+
+    function poll() {
+        if (stopped || Date.now() - startTime > 120000) {
+            return;
+        }
+
+        try {
+            client.getMessages(botUsername, { limit: 5 }).then(function(messages) {
+                if (stopped) return;
+                if (messages && messages.length > 0) {
+                    for (var i = messages.length - 1; i >= 0; i--) {
+                        var msg = messages[i];
+                        if (!msg || !msg.message) continue;
+                        if (msg.out === true || msg.out === 1) continue;
+                        if (processedIds[msg.id]) continue;
+                        if (msg.date * 1000 <= startTime) continue;
+                        processedIds[msg.id] = true;
+                        console.log('[session] polled agent message id=', msg.id, 'text=', formatLoggedMessage(msg.message));
+                        self.handleIncomingMessage(msg.message, done);
+                        return;
+                    }
+                }
+                setTimeout(poll, pollInterval);
+            }).catch(function(err) {
+                if (stopped) return;
+                console.log('[session] Poll error (non-fatal):', err.message || err);
+                setTimeout(poll, pollInterval);
+            });
+        } catch (e) {
+            if (stopped) return;
+            console.log('[session] Poll error:', e);
+            setTimeout(poll, pollInterval);
+        }
+    }
+
+    poll();
 };
 
 function formatLoggedMessage(message) {
