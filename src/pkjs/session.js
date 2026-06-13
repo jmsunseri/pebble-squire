@@ -107,27 +107,20 @@ Session.prototype.sendToAgent = function(message) {
 Session.prototype.sendViaGramJS = function(message, botUsername, resolve, reject) {
     var self = this;
     var cleanUsername = botUsername.replace(/^@/, '');
-    var botPeer = null;
 
     telegram.initClient().then(function() {
         var tgClient = telegram.getClient();
-        return tgClient.getEntity(cleanUsername);
-    }).then(function(peer) {
-        botPeer = peer;
-        console.log('[session] resolved bot peer:', botUsername, peer ? peer.className : 'null');
-        // Start listening before sending to avoid missing a fast response
-        self.listenForResponse(telegram.getClient(), botPeer, resolve, reject);
-        var tgClient = telegram.getClient();
-        return tgClient.sendMessage(botPeer, { message: message });
+        return tgClient.sendMessage(cleanUsername, { message: message });
     }).then(function(result) {
         console.log('[session] Message sent to', botUsername, 'id:', result ? result.id : 'unknown');
+        self.listenForResponse(telegram.getClient(), resolve, reject);
     }).catch(function(error) {
         console.error('[session] GramJS error:', error);
         reject(error);
     });
 };
 
-Session.prototype.listenForResponse = function(client, botPeer, resolve, reject) {
+Session.prototype.listenForResponse = function(client, resolve, reject) {
     var self = this;
     var timeout = 120000;
     var resolved = false;
@@ -145,70 +138,31 @@ Session.prototype.listenForResponse = function(client, botPeer, resolve, reject)
     }, timeout);
 
     if (typeof NewMessage !== 'undefined') {
-        var newMessageFilter = botPeer ? new NewMessage({ chats: [botPeer] }) : new NewMessage({});
         client.addEventHandler(function(event) {
             try {
                 if (resolved) return;
                 var msg = event.message;
                 if (!msg || !msg.message) return;
-                // Ignore the user's own outgoing messages (Telegram echoes them back).
-                // msg.out may be boolean true or the number 1 depending on GramJS version/platform.
-                console.log('[session] raw message out=', msg.out, 'id=', msg.id, 'text=', msg.message.substring(0, 50));
-                if (msg.out === true || msg.out === 1) return;
                 if (processedIds[msg.id]) return;
                 processedIds[msg.id] = true;
+                console.log('[session] raw message out=', msg.out, 'id=', msg.id, 'text=', formatLoggedMessage(msg.message));
                 self.handleIncomingMessage(msg.message, done);
             } catch (err) {
                 console.error('[session] Error handling message:', err);
             }
-        }, newMessageFilter);
-    } else {
-        // Fallback: poll the chat if event handlers aren't available
-        self.pollForMessages(client, botPeer, Date.now(), timeoutId, resolve, reject);
+        }, new NewMessage({}));
     }
 };
 
-Session.prototype.pollForMessages = function(client, botPeer, startTime, timeoutId, resolve, reject) {
-    var self = this;
-    var pollInterval = 2000; // Poll every 2 seconds
-
-    function poll() {
-        if (Date.now() - startTime > 120000) {
-            clearTimeout(timeoutId);
-            return;
-        }
-
-        if (!botPeer) {
-            setTimeout(poll, pollInterval);
-            return;
-        }
-
-        try {
-            client.getMessages(botPeer, { limit: 1 }).then(function(messages) {
-                if (messages && messages.length > 0) {
-                    var latestMsg = messages[0];
-                    // Check if this is a new message (after our sent message) and not our own
-                    if (latestMsg && latestMsg.message && !latestMsg.out && latestMsg.date * 1000 > startTime / 1000) {
-                        self.handleIncomingMessage(latestMsg.message, resolve);
-                        return;
-                    }
-                }
-                setTimeout(poll, pollInterval);
-            }).catch(function(err) {
-                console.log('Poll error (non-fatal):', err);
-                setTimeout(poll, pollInterval);
-            });
-        } catch (e) {
-            console.log('Poll error:', e);
-            setTimeout(poll, pollInterval);
-        }
-    }
-
-    poll();
-};
+function formatLoggedMessage(message) {
+    if (!message) return '';
+    var withoutSystem = message.replace(/<system>[\s\S]*?<\/system>/g, '').trim();
+    if (withoutSystem.length <= 100) return withoutSystem;
+    return withoutSystem.substring(0, 50) + '...' + withoutSystem.substring(withoutSystem.length - 50);
+}
 
 Session.prototype.handleIncomingMessage = function(message, resolve) {
-    console.log('Received message:', message.substring(0, 100));
+    console.log('Received message:', formatLoggedMessage(message));
 
     // Non-streaming mode: a single plain-text message is the complete response.
     this.hasOpenDialog = true;
