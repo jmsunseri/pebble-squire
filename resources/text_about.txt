@@ -4,7 +4,7 @@ Your AI assistant squire (forked from Bobby for agentic superpowers)
 
 ## Original Project
 Based on Bobby by Katharine Berry
-https://github.com/jmsunseri/bobby-assistant
+https://github.com/jmsunseri/pebble-squire
 
 ## Programming
 Katharine Berry
