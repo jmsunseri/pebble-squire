@@ -152,7 +152,7 @@ static void prv_app_message_handler(DictionaryIterator *iter, void *context) {
   if (tuple->value->int32 == 1) {
     rw->talking_squire_overridden = true;
     talking_squire_layer_set_text(rw->talking_squire_layer, "Uh oh!");
-    window_set_background_color(rw->window, COLOR_FALLBACK(GColorBabyBlueEyes, GColorDarkGray));
+    window_set_background_color(rw->window, COLOR_FALLBACK(GColorVeryLightBlue, GColorDarkGray));
     vibe_haptic_feedback();
   }
 }

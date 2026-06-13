@@ -216,7 +216,7 @@ static GColor prv_get_stripe_color(ConversationEntry* entry) {
     case EntryTypeThought:
       return GColorYellow;
     case EntryTypeError:
-      return GColorBabyBlueEyes;
+      return GColorVeryLightBlue;
     case EntryTypeAction:
       return GColorShockingPink;
     default:
