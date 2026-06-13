@@ -50,10 +50,10 @@ function fetchAndSendHistory() {
                     if (metaIdx !== -1) {
                         promptText = promptText.substring(0, metaIdx);
                     }
-                    promptText = promptText.replace(/\n*<system>[\s\S]*?<\/system>\n*/, '');
                     if (promptText.indexOf('[thread:') === 0) {
                         promptText = promptText.substring(promptText.indexOf('] ') + 2);
                     }
+                    promptText = promptText.replace(/\s*<system>[\s\S]*?<\/system>\s*/, '');
                     if (promptText.length > 0) {
                         historyEntries.push({ type: 'prompt', text: promptText });
                     }

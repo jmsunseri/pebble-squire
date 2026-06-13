@@ -136,7 +136,7 @@ Session.prototype.buildMessage = function() {
     // Format the message
     // The agent expects metadata in a specific format
     var systemPrompt = '<system>Respond concisely for a tiny smartwatch screen. Keep answers brief but include important details. The user is looking at their watch and waiting, so prioritize speed.</system>';
-    var formattedMessage = this.prompt + '\n\n' + systemPrompt;
+    var formattedMessage = systemPrompt + '\n\n' + this.prompt;
     if (this.threadId) {
         formattedMessage = '[thread:' + this.threadId + '] ' + formattedMessage;
     }
