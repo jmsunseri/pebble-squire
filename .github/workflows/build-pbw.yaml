@@ -57,18 +57,18 @@ jobs:
       - name: install sdk
         run: if [ ! -d ~/.pebble-sdk ]; then mkdir -p ~/.pebble-sdk && touch ~/.pebble-sdk/NO_TRACKING && ~/sdk/bin/pebble sdk install ~/sdk/sdk-core-4.3.tar.bz2; fi
       - name: fix whatever this git nonsense is
-        run: git config --global --add safe.directory /__w/bobby-assistant/bobby-assistant;
+        run: git config --global --add safe.directory /__w/pebble-squire/pebble-squire;
       - name: pebble-build
         run: yes | ~/sdk/bin/pebble build
       - name: rename-app
-        run: cp build/app.pbw Bobby-g${{ env.COMMIT_SHORT_SHA }}.pbw
+        run: cp build/app.pbw Squire-g${{ env.COMMIT_SHORT_SHA }}.pbw
       - name: generate elf bundle
         run: mkdir elfs && cp build/basalt/pebble-app.elf elfs/pebble-app-basalt.elf && cp build/diorite/pebble-app.elf elfs/pebble-app-diorite.elf && zip -r elfs.zip elfs
       - name: Upload PBW
         uses: actions/upload-artifact@v4
         with:
-          name: Bobby PBW
-          path: Bobby-g${{ env.COMMIT_SHORT_SHA }}.pbw
+          name: Squire PBW
+          path: Squire-g${{ env.COMMIT_SHORT_SHA }}.pbw
           if-no-files-found: error
       - name: Upload ELFs
         uses: actions/upload-artifact@v4

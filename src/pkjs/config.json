@@ -183,7 +183,7 @@
             {
                 "type": "text",
                 "label": "Need help?",
-                "defaultValue": "Report issues at github.com/jmsunseri/bobby-assistant/issues"
+                "defaultValue": "Report issues at github.com/jmsunseri/pebble-squire/issues"
             }
         ]
     },
