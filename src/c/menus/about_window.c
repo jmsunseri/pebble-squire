@@ -61,10 +61,10 @@ static void prv_window_load(Window* window) {
   snprintf(data->about_text, res_size + 7, about_text, version.major, version.minor);
   data->about_text[res_size+6] = '\0';
 
-  window_set_background_color(window, BRANDED_BACKGROUND_COLOUR);
+  window_set_background_color(window, GColorWhite);
 
   data->status_bar = bstatus_bar_layer_create();
-  squire_status_bar_result_pane_config(data->status_bar);
+  status_bar_layer_set_colors(data->status_bar, GColorWhite, GColorBlack);
   layer_add_child(root_layer, status_bar_layer_get_layer(data->status_bar));
 
   data->scroll_layer = bscroll_layer_create(GRect(0, STATUS_BAR_LAYER_HEIGHT, window_bounds.size.w, window_bounds.size.h - STATUS_BAR_LAYER_HEIGHT));
@@ -79,7 +79,7 @@ static void prv_window_load(Window* window) {
 #endif
   data->text_layer = formatted_text_layer_create(GRect(text_margin, 0, window_bounds.size.w - text_margin * 2, 10000));
   formatted_text_layer_set_text_alignment(data->text_layer, GTextAlignmentCenter);
-  formatted_text_layer_set_text_color(data->text_layer, gcolor_legible_over(BRANDED_BACKGROUND_COLOUR));
+  formatted_text_layer_set_text_color(data->text_layer, GColorBlack);
   formatted_text_layer_set_text(data->text_layer, data->about_text);
   GSize text_size = formatted_text_layer_get_content_size(data->text_layer);
 

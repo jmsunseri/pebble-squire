@@ -58,7 +58,7 @@ void talking_squire_layer_set_text(TalkingSquireLayer *layer, const char *text) 
   TalkingSquireLayerData *data = layer_get_data(layer);
   data->text = text;
   GRect bounds = layer_get_bounds(layer);
-  data->text_size = graphics_text_layout_get_content_size_with_attributes(text, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(0, 1, bounds.size.w - 23, bounds.size.h - 15), GTextOverflowModeWordWrap, GTextAlignmentLeft, data->text_attributes);
+  data->text_size = graphics_text_layout_get_content_size_with_attributes(text, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD), GRect(0, 1, bounds.size.w - 23, bounds.size.h - 15), GTextOverflowModeWordWrap, GTextAlignmentLeft, data->text_attributes);
   layer_mark_dirty(layer);
 }
 
@@ -71,6 +71,7 @@ static void prv_update_layer(Layer *layer, GContext *ctx) {
   const int available_space = bounds.size.w - 18 - data->text_size.w - 10;
   const int bubble_width = size.w - 16 - available_space;
   const int corner_offset = 6;
+  const int padding = 4;
 
   // Squire position
 #if defined(PBL_PLATFORM_EMERY)
@@ -93,36 +94,37 @@ static void prv_update_layer(Layer *layer, GContext *ctx) {
 
   // Position bubble just above the squire on all platforms
   const int bubble_overlap = 2;
-  const int speech_bubble_top = squire_y - text_height + bubble_overlap;
+  const int bubble_y_offset = 9;
+  const int speech_bubble_top = squire_y - text_height + bubble_overlap - bubble_y_offset;
 
   GPath bubble_path = {
     .num_points = 8,
-    .offset = GPoint(bubble_x, speech_bubble_top),
+    .offset = GPoint(bubble_x - padding, speech_bubble_top - padding),
     .rotation = 0,
     .points = (GPoint[]) {
       // top left rounded
       {0, corner_offset},
       {corner_offset, 0},
       // top right rounded
-      {bubble_width - corner_offset, 0},
-      {bubble_width, corner_offset},
+      {bubble_width + padding * 2 - corner_offset, 0},
+      {bubble_width + padding * 2, corner_offset},
       // bottom right rounded
-      {bubble_width, text_height},
-      {bubble_width - corner_offset, text_height + corner_offset},
+      {bubble_width + padding * 2, text_height + padding * 2},
+      {bubble_width + padding * 2 - corner_offset, text_height + padding * 2 + corner_offset},
       // bottom left rounded
-      {corner_offset, text_height + corner_offset},
-      {0, text_height},
+      {corner_offset, text_height + padding * 2 + corner_offset},
+      {0, text_height + padding * 2},
     }
   };
   graphics_context_set_fill_color(ctx, GColorWhite);
   gpath_draw_filled(ctx, &bubble_path);
   graphics_context_set_stroke_color(ctx, GColorBlack);
-  graphics_context_set_stroke_width(ctx, 3);
+  graphics_context_set_stroke_width(ctx, 4);
   gpath_draw_outline(ctx, &bubble_path);
 
   graphics_context_set_text_color(ctx, GColorBlack);
-  GRect text_bounds = GRect(bubble_x + corner_offset + 2, speech_bubble_top + corner_offset - 5, data->text_size.w, data->text_size.h);
-  graphics_draw_text(ctx, data->text, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), text_bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft, data->text_attributes);
+  GRect text_bounds = GRect(bubble_x - padding + corner_offset + 2, speech_bubble_top - padding + corner_offset - 5, data->text_size.w, data->text_size.h);
+  graphics_draw_text(ctx, data->text, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD), text_bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft, data->text_attributes);
   gdraw_command_image_draw(ctx, data->squire, GPoint(squire_x, squire_y));
 }
 
