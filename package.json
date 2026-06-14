@@ -160,86 +160,6 @@
           "type": "raw"
         },
         {
-          "file": "weather_medium_generic.pdc",
-          "name": "WEATHER_MEDIUM_GENERIC",
-          "type": "raw"
-        },
-        {
-          "file": "weather_medium_heavy_rain.pdc",
-          "name": "WEATHER_MEDIUM_HEAVY_RAIN",
-          "type": "raw"
-        },
-        {
-          "file": "weather_medium_heavy_snow.pdc",
-          "name": "WEATHER_MEDIUM_HEAVY_SNOW",
-          "type": "raw"
-        },
-        {
-          "file": "weather_medium_light_rain.pdc",
-          "name": "WEATHER_MEDIUM_LIGHT_RAIN",
-          "type": "raw"
-        },
-        {
-          "file": "weather_medium_light_snow.pdc",
-          "name": "WEATHER_MEDIUM_LIGHT_SNOW",
-          "type": "raw"
-        },
-        {
-          "file": "weather_medium_partly_cloudy.pdc",
-          "name": "WEATHER_MEDIUM_PARTLY_CLOUDY",
-          "type": "raw"
-        },
-        {
-          "file": "weather_medium_cloudy.pdc",
-          "name": "WEATHER_MEDIUM_CLOUDY",
-          "type": "raw"
-        },
-        {
-          "file": "weather_medium_sunny.pdc",
-          "name": "WEATHER_MEDIUM_SUNNY",
-          "type": "raw"
-        },
-        {
-          "file": "weather_small_generic.pdc",
-          "name": "WEATHER_SMALL_GENERIC",
-          "type": "raw"
-        },
-        {
-          "file": "weather_small_heavy_rain.pdc",
-          "name": "WEATHER_SMALL_HEAVY_RAIN",
-          "type": "raw"
-        },
-        {
-          "file": "weather_small_heavy_snow.pdc",
-          "name": "WEATHER_SMALL_HEAVY_SNOW",
-          "type": "raw"
-        },
-        {
-          "file": "weather_small_light_rain.pdc",
-          "name": "WEATHER_SMALL_LIGHT_RAIN",
-          "type": "raw"
-        },
-        {
-          "file": "weather_small_light_snow.pdc",
-          "name": "WEATHER_SMALL_LIGHT_SNOW",
-          "type": "raw"
-        },
-        {
-          "file": "weather_small_partly_cloudy.pdc",
-          "name": "WEATHER_SMALL_PARTLY_CLOUDY",
-          "type": "raw"
-        },
-        {
-          "file": "weather_small_cloudy.pdc",
-          "name": "WEATHER_SMALL_CLOUDY",
-          "type": "raw"
-        },
-        {
-          "file": "weather_small_sunny.pdc",
-          "name": "WEATHER_SMALL_SUNNY",
-          "type": "raw"
-        },
-        {
           "file": "images_icons_menu_about.png",
           "name": "MENU_ICON_ABOUT",
           "type": "bitmap",
@@ -248,11 +168,6 @@
         {
           "file": "vibes_haptic_feedback.vibe",
           "name": "VIBE_HAPTIC_FEEDBACK",
-          "type": "raw"
-        },
-        {
-          "file": "images_skull.pdc",
-          "name": "IMAGE_SKULL",
           "type": "raw"
         },
         {
