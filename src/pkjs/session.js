@@ -61,9 +61,16 @@ Session.prototype.run = function() {
     // Send to agent via Telegram
     this.sendToAgent(message).catch(function(error) {
         console.error('Telegram session error:', error);
-        self.enqueue({
-            CHAT: 'Error communicating with agent: ' + error.message
-        });
+        var errorMsg = error.message || 'Unknown error';
+        if (errorMsg.indexOf('re-authenticate') !== -1 || errorMsg.indexOf('session expired') !== -1) {
+            self.enqueue({
+                WARNING: 'Telegram session expired. Please re-authenticate in the app settings.'
+            });
+        } else {
+            self.enqueue({
+                CHAT: 'Error communicating with agent: ' + errorMsg
+            });
+        }
         self.enqueue({
             CHAT_DONE: true
         });

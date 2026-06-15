@@ -107,15 +107,34 @@ function initClient() {
                         console.error('[client] Client connected but NOT authorized (stored session may be invalid)');
                         isConnected = false;
                         client = null;
-                        reject(new Error('Telegram client connected but not authorized. Please re-authenticate.'));
+                        session.clearSession();
+                        try { Pebble.sendAppMessage({TELEGRAM_CONNECTED: 0}); } catch(e) {}
+                        reject(new Error('Telegram session expired. Please re-authenticate.'));
                         return;
                     }
                     console.log('[client] Client is authorized');
                     resolve(true);
                 }).catch(function(err) {
                     clearTimeout(connectTimeout);
-                    console.error('[client] Failed to connect to Telegram: ' + (err.message || err));
+                    var errorMsg = (err.message || err || '').toString();
+                    console.error('[client] Failed to connect to Telegram: ' + errorMsg);
                     console.error('[client] Error stack: ' + (err.stack || 'no stack'));
+                    if (errorMsg.indexOf('AUTH_KEY_DUPLICATED') !== -1 || errorMsg.indexOf('AUTH_KEY_UNREGISTERED') !== -1) {
+                        console.log('[client] Session key invalid, clearing session for re-auth');
+                        session.clearSession();
+                        isConnected = false;
+                        client = null;
+                        try { Pebble.sendAppMessage({TELEGRAM_CONNECTED: 0}); } catch(e) {}
+                        reject(new Error('Telegram session expired. Please re-authenticate.'));
+                        return;
+                    }
+                    if (errorMsg.indexOf('re-authenticate') !== -1 || errorMsg.indexOf('session expired') !== -1) {
+                        console.log('[client] Clearing invalid session');
+                        session.clearSession();
+                        isConnected = false;
+                        client = null;
+                        try { Pebble.sendAppMessage({TELEGRAM_CONNECTED: 0}); } catch(e) {}
+                    }
                     reject(err);
                 });
             } else {
