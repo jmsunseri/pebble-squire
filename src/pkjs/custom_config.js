@@ -91,7 +91,7 @@ module.exports = function(minified) {
         if (loadSession()) return;
         var code = codeInput ? codeInput.get() : '';
         var phone = phoneInput ? phoneInput.get() : '';
-        if (code) {
+        if (code && !phone) {
             setPendingAction({ action: 'provide_code', code: code });
         } else if (phone) {
             setPendingAction({ action: 'start_auth', phoneNumber: normalizePhone(phone) });

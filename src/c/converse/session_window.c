@@ -99,7 +99,7 @@ void session_window_push(int timeout, char *starting_prompt) {
 void session_window_push_with_history(int timeout, char *starting_prompt, const char *thread_id) {
   // Check if Telegram is connected
   if (!settings_is_telegram_connected()) {
-    result_window_push("Oops!", "Please configure Telegram in the app settings to use Squire.", NULL, BRANDED_BACKGROUND_COLOUR);
+    result_window_push_persistent("Oops!", "Please configure Telegram in the app settings to use Squire. Enter your phone number and save to receive a verification code.", NULL, GColorWhite);
     return;
   }
 
