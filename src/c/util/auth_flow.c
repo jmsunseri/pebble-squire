@@ -47,7 +47,7 @@ static void prv_phone_entered(const char* value) {
   }
 
   s_waiting_for_code = true;
-  result_window_push_persistent("Code Sent", "Check Telegram on your phone for the verification code.", NULL, GColorWhite);
+  // Don't block the UI; the code entry screen will be pushed when TELEGRAM_CODE_SENT arrives.
 }
 
 static void prv_code_entered(const char* value) {
