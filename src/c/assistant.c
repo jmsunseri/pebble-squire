@@ -28,6 +28,7 @@
 
 #include "util/logging.h"
 #include "util/memory/pressure.h"
+#include "util/auth_flow.h"
 
 
 #define QUICK_LAUNCH_TIMEOUT_MS 60000

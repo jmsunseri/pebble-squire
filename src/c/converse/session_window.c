@@ -28,6 +28,7 @@
 #include "../util/memory/malloc.h"
 #include "../util/memory/sdk.h"
 #include "../util/result_window.h"
+#include "../util/auth_flow.h"
 #include "../vibes/haptic_feedback.h"
 #include "../features.h"
 
@@ -96,12 +97,27 @@ void session_window_push(int timeout, char *starting_prompt) {
   session_window_push_with_history(timeout, starting_prompt, NULL);
 }
 
+void session_window_push_with_history(int timeout, char *starting_prompt, const char *thread_id);
+
+static void prv_push_actual_session_window(int timeout, char *starting_prompt, const char *thread_id);
+
+static void prv_auth_flow_complete(bool success) {
+  if (success) {
+    settings_set_telegram_connected(true);
+    session_window_push(0, NULL);
+  }
+}
+
 void session_window_push_with_history(int timeout, char *starting_prompt, const char *thread_id) {
   // Check if Telegram is connected
   if (!settings_is_telegram_connected()) {
-    result_window_push_persistent("Oops!", "Please configure Telegram in the app settings to use Squire. Enter your phone number and save to receive a verification code.", NULL, GColorWhite);
+    auth_flow_start(prv_auth_flow_complete);
     return;
   }
+  prv_push_actual_session_window(timeout, starting_prompt, thread_id);
+}
+
+static void prv_push_actual_session_window(int timeout, char *starting_prompt, const char *thread_id) {
 
   Window *window = bwindow_create();
   SessionWindow *sw = bmalloc(sizeof(SessionWindow));

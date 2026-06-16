@@ -20,6 +20,7 @@
 
 #include "../util/persist_keys.h"
 #include "../util/logging.h"
+#include "../util/auth_flow.h"
 
 static EventHandle s_event_handle;
 
@@ -49,6 +50,11 @@ bool settings_is_telegram_connected() {
   return persist_read_bool(PERSIST_KEY_TELEGRAM_CONNECTED);
 }
 
+void settings_set_telegram_connected(bool connected) {
+  persist_write_bool(PERSIST_KEY_TELEGRAM_CONNECTED, connected);
+}
+
+
 static void prv_app_message_handler(DictionaryIterator *iter, void *context) {
   for (Tuple *tuple = dict_read_first(iter); tuple; tuple = dict_read_next(iter)) {
     if (tuple->key == MESSAGE_KEY_QUICK_LAUNCH_BEHAVIOUR) {
@@ -59,6 +65,11 @@ static void prv_app_message_handler(DictionaryIterator *iter, void *context) {
     } else if (tuple->key == MESSAGE_KEY_TELEGRAM_CONNECTED) {
       persist_write_bool(PERSIST_KEY_TELEGRAM_CONNECTED, tuple->value->int8);
       SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Telegram connected: %s", tuple->value->int8 ? "true" : "false");
+      auth_flow_handle_message(tuple->key);
+    } else if (tuple->key == MESSAGE_KEY_TELEGRAM_CODE_SENT) {
+      auth_flow_handle_message(tuple->key);
+    } else if (tuple->key == MESSAGE_KEY_TELEGRAM_AUTH_ERROR) {
+      auth_flow_handle_message(tuple->key);
     } else if (tuple->key == MESSAGE_KEY_TELEGRAM_PENDING_ACTION) {
       SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Echoing TELEGRAM_PENDING_ACTION to phone");
       char *pending_action = tuple->value->cstring;

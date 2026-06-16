@@ -60,7 +60,11 @@
       "HISTORY_RESPONSE",
       "HISTORY_THREAD_ID",
       "HISTORY_DONE",
-      "TYPING"
+      "TYPING",
+      "TELEGRAM_START_AUTH",
+      "TELEGRAM_PROVIDE_CODE",
+      "TELEGRAM_CODE_SENT",
+      "TELEGRAM_AUTH_ERROR"
     ],
     "resources": {
       "media": [

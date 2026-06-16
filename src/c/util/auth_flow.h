@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef AUTH_FLOW_H
+#define AUTH_FLOW_H
 
 #include <pebble.h>
 
-typedef enum {
-  QuickLaunchBehaviourConverseWithTimeout = 1,
-  QuickLaunchBehaviourConverseForever = 2,
-  QuickLaunchBehaviourHomeScreen = 3,
-} QuickLaunchBehaviour;
+typedef void (*AuthFlowCompleteCallback)(bool success);
 
-void settings_init();
-void settings_deinit();
-QuickLaunchBehaviour settings_get_quick_launch_behaviour();
-bool settings_get_should_confirm_transcripts();
-bool settings_is_telegram_connected();
-void settings_set_telegram_connected(bool connected);
+void auth_flow_start(AuthFlowCompleteCallback callback);
+void auth_flow_handle_message(uint32_t key);
+
+#endif // AUTH_FLOW_H
