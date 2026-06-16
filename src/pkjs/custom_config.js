@@ -17,42 +17,11 @@
 module.exports = function(minified) {
     var clayConfig = this;
 
-    var telegramStatusText, botInput;
+    var botInput;
     var disconnectBtn;
+    var pendingActionInput;
 
-    var SESSION_KEY = 'telegram_session';
     var BOT_USERNAME_KEY = 'agent_telegram_username';
-
-    function setStatus(text, isError) {
-        if (telegramStatusText) {
-            telegramStatusText.set(text);
-            if (isError) {
-                telegramStatusText.$element[0].style.color = 'red';
-            } else {
-                telegramStatusText.$element[0].style.color = '';
-            }
-        }
-    }
-
-    function loadSession() {
-        try { return localStorage.getItem(SESSION_KEY); } catch (e) { return null; }
-    }
-
-    function clearSession() {
-        try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
-    }
-
-    function getBotUsername() {
-        var username = localStorage.getItem(BOT_USERNAME_KEY);
-        try {
-            var settings = JSON.parse(localStorage.getItem('clay-settings')) || {};
-            if (!username) { username = settings.AGENT_TELEGRAM_USERNAME || '@MyAgentBot'; }
-        } catch (e) {
-            if (!username) { username = '@MyAgentBot'; }
-        }
-        if (username && !username.startsWith('@')) { username = '@' + username; }
-        return username || '@MyAgentBot';
-    }
 
     function saveBotUsername(username) {
         try {
@@ -61,29 +30,23 @@ module.exports = function(minified) {
         } catch (e) {}
     }
 
-    function updateUI() {
-        var session = loadSession();
-        if (session) {
-            setStatus('Connected (' + getBotUsername() + ')');
-            if (disconnectBtn) disconnectBtn.show();
-        } else {
-            setStatus('Not connected');
-            if (disconnectBtn) disconnectBtn.hide();
+    function setPendingAction(action) {
+        console.log('[config] setPendingAction: ' + JSON.stringify(action));
+        if (pendingActionInput) {
+            pendingActionInput.set(JSON.stringify(action));
         }
     }
 
     clayConfig.on(clayConfig.EVENTS.AFTER_BUILD, function() {
-        telegramStatusText = clayConfig.getItemById('telegramStatus');
         botInput = clayConfig.getItemByMessageKey('AGENT_TELEGRAM_USERNAME');
         disconnectBtn = clayConfig.getItemByMessageKey('TELEGRAM_DISCONNECT');
-
-        updateUI();
+        pendingActionInput = clayConfig.getItemByMessageKey('TELEGRAM_PENDING_ACTION');
 
         if (disconnectBtn) {
+            disconnectBtn.show();
             disconnectBtn.on('click', function() {
                 console.log('[config] Disconnect button clicked');
-                clearSession();
-                updateUI();
+                setPendingAction({ action: 'disconnect' });
             });
         }
 
