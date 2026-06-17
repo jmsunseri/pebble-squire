@@ -20,11 +20,14 @@
 
 #include <pebble.h>
 
+#define BMALLOC_MAX_RETRIES 50
+
 void *bmalloc(size_t size) {
   register uintptr_t lr __asm("lr");
   const uintptr_t saved_lr = lr;
   int heap_size = heap_bytes_free();
   SQUIRE_LOG(APP_LOG_LEVEL_DEBUG, "malloc request: %d; free: %d", size, heap_size);
+  int retries = 0;
   while (true) {
     heap_size = heap_bytes_free();
     if (heap_bytes_free() > 750) {
@@ -43,9 +46,12 @@ void *bmalloc(size_t size) {
         SQUIRE_LOG(APP_LOG_LEVEL_DEBUG, "malloc returned %p for caller %p", tried, saved_lr);
         return tried;
       }
-      // Keep trying - we can't return NULL as callers don't check for it
-      // Sleep briefly to avoid tight loop, then continue trying
-      SQUIRE_LOG(APP_LOG_LEVEL_ERROR, "Critical: couldn't allocate %d bytes. Retrying...", size);
+      if (++retries >= BMALLOC_MAX_RETRIES) {
+        SQUIRE_LOG(APP_LOG_LEVEL_ERROR, "Critical: failed to allocate %d bytes after %d retries. Giving up.", size, retries);
+        vibes_short_pulse();
+        return NULL;
+      }
+      SQUIRE_LOG(APP_LOG_LEVEL_ERROR, "Critical: couldn't allocate %d bytes. Retrying (%d/%d)...", size, retries, BMALLOC_MAX_RETRIES);
       psleep(100);
       continue;
     }
