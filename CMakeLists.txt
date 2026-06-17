@@ -38,37 +38,39 @@ include_directories(node_modules/@smallstoneapps/linked-list/dist/include)
 
 # Y'know, all the files.
 add_executable(tiny_assistant_app
-        src/c/alarms/alarm_window.c
-        src/c/alarms/manager.c
+        src/c/assistant.c
+        src/c/root_window.c
+        src/c/talking_squire_layer.c
+        src/c/release_notes.c
+        src/c/consent/consent.c
         src/c/converse/conversation.c
         src/c/converse/conversation_manager.c
+        src/c/converse/history.c
+        src/c/converse/session_window.c
         src/c/converse/segments/info_layer.c
         src/c/converse/segments/message_layer.c
         src/c/converse/segments/segment_layer.c
-        src/c/converse/session_window.c
-        src/c/util/thinking_layer.c
-        src/c/assistant.c
-        src/c/root_window.c
-        src/c/menus/root_menu.c
-        src/c/menus/alarm_menu.c
-        src/c/menus/alarm_menu.h
-        src/c/menus/legal_window.c
-        src/c/menus/reminders_menu.c
-        src/c/consent/consent.c
-        src/c/util/vector_layer.c
-        src/c/util/style.c
-        src/c/util/vector_sequence_layer.c
-        src/c/util/result_window.c
-        src/c/talking_squire_layer.c
-        src/c/version/version.c
-        src/c/util/time.c
-        src/c/settings/settings.c
-        src/c/util/formatted_text_layer.c
         src/c/menus/about_window.c
-        src/c/vibes/haptic_feedback.c
+        src/c/menus/legal_window.c
+        src/c/menus/root_menu.c
+        src/c/settings/settings.c
+        src/c/util/action_menu_crimes.c
+        src/c/util/auth_entry_window.c
+        src/c/util/auth_flow.c
+        src/c/util/formatted_text_layer.c
+        src/c/util/result_window.c
+        src/c/util/selection_layer.c
+        src/c/util/strings.c
+        src/c/util/style.c
+        src/c/util/thinking_layer.c
+        src/c/util/time.c
+        src/c/util/vector_layer.c
+        src/c/util/vector_sequence_layer.c
         src/c/util/memory/malloc.c
         src/c/util/memory/pressure.c
         src/c/util/memory/sdk.c
-        src/c/release_notes.c
+        src/c/vibes/haptic_feedback.c
+        src/c/vibes/sad_vibe_score.c
+        src/c/version/version.c
 
 )
