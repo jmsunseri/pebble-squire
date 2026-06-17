@@ -56,7 +56,6 @@ src/
 ├── c/                 # Watch app C code
 ├── pkjs/              # Phone app JavaScript
 │   ├── telegram/      # Telegram MTProto client
-│   ├── actions/       # Action handlers (alarms, reminders)
 │   └── session.js     # Main session management
 resources/             # Watch app resources (icons, images, etc.)
 package.json           # Pebble app configuration
