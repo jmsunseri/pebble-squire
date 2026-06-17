@@ -30,6 +30,5 @@ bool version_is_updated();
 VersionInfo version_get_last_launch();
 VersionInfo version_get_current();
 int version_info_compare(VersionInfo a, VersionInfo b);
-const char* version_git_tag();
 
 #endif //VERSION_H
