@@ -95,7 +95,10 @@ void consent_migrate() {
       // If the location enabled state is set, that's equivalent to consent agreement version 1.
       if (persist_exists(PERSIST_KEY_LOCATION_ENABLED)) {
         SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Marking consent as 1.");;
-        persist_write_int(PERSIST_KEY_CONSENTS_COMPLETED, 1);
+        status_t status = persist_write_int(PERSIST_KEY_CONSENTS_COMPLETED, 1);
+        if (status < 0) {
+          SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to mark consent as complete: %d", status);
+        }
       } else {
         SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Not marking consent.");;
       }
@@ -289,7 +292,10 @@ static void prv_app_message_handler(DictionaryIterator *iter, void *context) {
   events_app_message_unsubscribe(data->app_message_handle);
   data->app_message_handle = NULL;
   bool location_enabled = tuple->value->int16;
-  persist_write_bool(PERSIST_KEY_LOCATION_ENABLED, location_enabled);
+  status_t status = persist_write_bool(PERSIST_KEY_LOCATION_ENABLED, location_enabled);
+  if (status < 0) {
+    SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to write location enabled: %d", status);
+  }
   prv_mark_consents_complete();
   RootWindow *root_window = root_window_create();
   action_menu_set_result_window(data->action_menu, root_window_get_window(root_window));
@@ -302,5 +308,8 @@ static void prv_action_menu_close(ActionMenu* action_menu, const ActionMenuItem*
 }
 
 static void prv_mark_consents_complete() {
-  persist_write_int(PERSIST_KEY_CONSENTS_COMPLETED, 1);
+  status_t status = persist_write_int(PERSIST_KEY_CONSENTS_COMPLETED, 1);
+  if (status < 0) {
+    SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to mark consents as complete: %d", status);
+  }
 }

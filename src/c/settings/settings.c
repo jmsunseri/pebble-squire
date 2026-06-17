@@ -51,7 +51,10 @@ bool settings_is_telegram_connected() {
 }
 
 void settings_set_telegram_connected(bool connected) {
-  persist_write_bool(PERSIST_KEY_TELEGRAM_CONNECTED, connected);
+  status_t status = persist_write_bool(PERSIST_KEY_TELEGRAM_CONNECTED, connected);
+  if (status < 0) {
+    SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to write telegram connected: %d", status);
+  }
 }
 
 
@@ -59,11 +62,20 @@ static void prv_app_message_handler(DictionaryIterator *iter, void *context) {
   for (Tuple *tuple = dict_read_first(iter); tuple; tuple = dict_read_next(iter)) {
     if (tuple->key == MESSAGE_KEY_QUICK_LAUNCH_BEHAVIOUR) {
       int value = atoi(tuple->value->cstring);
-      persist_write_int(PERSIST_KEY_QUICK_LAUNCH_BEHAVIOUR, value);
+      status_t status = persist_write_int(PERSIST_KEY_QUICK_LAUNCH_BEHAVIOUR, value);
+      if (status < 0) {
+        SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to write quick launch behaviour: %d", status);
+      }
     } else if (tuple->key == MESSAGE_KEY_CONFIRM_TRANSCRIPTS) {
-      persist_write_bool(PERSIST_KEY_CONFIRM_TRANSCRIPTS, tuple->value->int8);
+      status_t status = persist_write_bool(PERSIST_KEY_CONFIRM_TRANSCRIPTS, tuple->value->int8);
+      if (status < 0) {
+        SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to write confirm transcripts setting: %d", status);
+      }
     } else if (tuple->key == MESSAGE_KEY_TELEGRAM_CONNECTED) {
-      persist_write_bool(PERSIST_KEY_TELEGRAM_CONNECTED, tuple->value->int8);
+      status_t status = persist_write_bool(PERSIST_KEY_TELEGRAM_CONNECTED, tuple->value->int8);
+      if (status < 0) {
+        SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to write telegram connected: %d", status);
+      }
       SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Telegram connected: %s", tuple->value->int8 ? "true" : "false");
       auth_flow_handle_message(tuple->key);
     } else if (tuple->key == MESSAGE_KEY_TELEGRAM_CODE_SENT) {
