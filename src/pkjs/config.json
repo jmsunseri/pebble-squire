@@ -73,7 +73,6 @@
             {
                 "type": "button",
                 "id": "disconnectBtn",
-                "messageKey": "TELEGRAM_DISCONNECT",
                 "defaultValue": "Disconnect"
             },
             {

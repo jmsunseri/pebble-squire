@@ -39,7 +39,7 @@ module.exports = function(minified) {
 
     clayConfig.on(clayConfig.EVENTS.AFTER_BUILD, function() {
         botInput = clayConfig.getItemByMessageKey('AGENT_TELEGRAM_USERNAME');
-        disconnectBtn = clayConfig.getItemByMessageKey('TELEGRAM_DISCONNECT');
+        disconnectBtn = clayConfig.getItemById('disconnectBtn');
         pendingActionInput = clayConfig.getItemByMessageKey('TELEGRAM_PENDING_ACTION');
 
         if (disconnectBtn) {
