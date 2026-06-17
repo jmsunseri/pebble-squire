@@ -16,7 +16,6 @@
 
 #include "root_menu.h"
 #include "about_window.h"
-#include "legal_window.h"
 #include "../util/style.h"
 #include "../util/memory/malloc.h"
 #include "../util/memory/sdk.h"
@@ -28,7 +27,6 @@
 static void prv_window_load(Window* window);
 static void prv_window_unload(Window* window);
 static void prv_push_about_screen(int index, void* context);
-static void prv_push_legal_screen(int index, void* context);
 static uint16_t prv_get_num_rows(MenuLayer *menu_layer, uint16_t section_index, void *context);
 static void prv_draw_row(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *context);
 static void prv_select_click(MenuLayer *menu_layer, MenuIndex *cell_index, void *context);
@@ -148,10 +146,6 @@ static void prv_draw_row(GContext *ctx, const Layer *cell_layer, MenuIndex *cell
 
 static void prv_select_click(MenuLayer *menu_layer, MenuIndex *cell_index, void *context) {
   s_menu_items[cell_index->row].callback((int)cell_index->row, context);
-}
-
-static void prv_push_legal_screen(int index, void* context) {
-  legal_window_push();
 }
 
 static void prv_push_about_screen(int index, void* context) {

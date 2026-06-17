@@ -131,11 +131,6 @@
           "type": "raw"
         },
         {
-          "file": "text_legal.txt",
-          "name": "LEGAL_TEXT",
-          "type": "raw"
-        },
-        {
           "file": "text_about.txt",
           "name": "ABOUT_TEXT",
           "type": "raw"

@@ -51,7 +51,6 @@ add_executable(tiny_assistant_app
         src/c/converse/segments/message_layer.c
         src/c/converse/segments/segment_layer.c
         src/c/menus/about_window.c
-        src/c/menus/legal_window.c
         src/c/menus/root_menu.c
         src/c/settings/settings.c
         src/c/util/action_menu_crimes.c
