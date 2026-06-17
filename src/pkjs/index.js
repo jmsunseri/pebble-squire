@@ -45,8 +45,6 @@ function sendTelegramStatus() {
     });
 }
 
-var authInProgress = false;
-
 function handleTelegramDisconnect() {
     console.log('[index] Disconnecting from Telegram');
     telegram.logout().then(function() {

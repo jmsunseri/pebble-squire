@@ -26,8 +26,28 @@ var session = require('./session');
 var phoneCodeHash = null;
 var pendingPhone = null;
 var authSession = null;
+var authInProgress = false;
 
 var AUTH_STATE_KEY = 'telegram_auth_waiting_for_code';
+
+function withAuthLock(fn) {
+    return function() {
+        if (authInProgress) {
+            return Promise.reject(new Error('Authentication already in progress'));
+        }
+        authInProgress = true;
+        var args = arguments;
+        return Promise.resolve()
+            .then(function() { return fn.apply(null, args); })
+            .then(function(result) {
+                authInProgress = false;
+                return result;
+            }, function(err) {
+                authInProgress = false;
+                throw err;
+            });
+    };
+}
 
 var AUTH_DC = {
     id: 1,
@@ -233,15 +253,15 @@ function logout() {
 function getAuthState() {
     return {
         isWaitingForCode: phoneCodeHash !== null,
-        isWaitingForPassword: false,
-        isAuthInProgress: phoneCodeHash !== null,
+        isWaitingForPassword: authSession !== null,
+        isAuthInProgress: authInProgress,
         isCodeViaApp: false
     };
 }
 
-exports.startAuth = startAuth;
-exports.provideCode = provideCode;
-exports.providePassword = providePassword;
+exports.startAuth = withAuthLock(startAuth);
+exports.provideCode = withAuthLock(provideCode);
+exports.providePassword = withAuthLock(providePassword);
 exports.checkConnection = checkConnection;
 exports.logout = logout;
 exports.getAuthState = getAuthState;
