@@ -101,10 +101,16 @@ void session_window_push_with_history(int timeout, char *starting_prompt, const 
 
 static void prv_push_actual_session_window(int timeout, char *starting_prompt, const char *thread_id);
 
-static void prv_auth_flow_complete(bool success) {
+static void prv_auth_flow_complete(bool success, const char* agent_username) {
   if (success) {
     settings_set_telegram_connected(true);
-    session_window_push(0, NULL);
+    char message[96];
+    if (agent_username && agent_username[0]) {
+      snprintf(message, sizeof(message), "Your agent bot is %s.\nMake sure this matches the bot set in the app settings on your phone.", agent_username);
+    } else {
+      snprintf(message, sizeof(message), "Set your agent bot username in the app settings on your phone so messages go to the right bot.");
+    }
+    result_window_push("Signed In", message, NULL, GColorWhite);
   }
 }
 

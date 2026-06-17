@@ -19,10 +19,10 @@
 
 #include <pebble.h>
 
-typedef void (*AuthFlowCompleteCallback)(bool success);
+typedef void (*AuthFlowCompleteCallback)(bool success, const char* agent_username);
 
 void auth_flow_start(AuthFlowCompleteCallback callback);
-void auth_flow_handle_message(uint32_t key);
+void auth_flow_handle_message(uint32_t key, const char* value);
 void auth_flow_cancel(void);
 
 #endif // AUTH_FLOW_H

@@ -91,7 +91,11 @@ function handleAppMessage(e) {
         telegram.provideCode(code).then(function(result) {
             console.log('[index] provideCode result: ' + JSON.stringify(result));
             if (result.success) {
-                Pebble.sendAppMessage({ TELEGRAM_CONNECTED: 1 });
+                var username = telegram.getBotUsername();
+                Pebble.sendAppMessage({
+                    TELEGRAM_CONNECTED: 1,
+                    AGENT_TELEGRAM_USERNAME: username
+                });
                 history.fetchAndSendHistory();
             } else if (result.status === 'password_needed') {
                 Pebble.sendAppMessage({ TELEGRAM_AUTH_ERROR: 1 });
