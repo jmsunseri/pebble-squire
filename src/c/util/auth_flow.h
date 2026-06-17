@@ -23,5 +23,6 @@ typedef void (*AuthFlowCompleteCallback)(bool success);
 
 void auth_flow_start(AuthFlowCompleteCallback callback);
 void auth_flow_handle_message(uint32_t key);
+void auth_flow_cancel(void);
 
 #endif // AUTH_FLOW_H

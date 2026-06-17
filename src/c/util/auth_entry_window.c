@@ -38,6 +38,7 @@ typedef struct {
   int selected_digit;
   int max_length;
   AuthEntryCallback callback;
+  AuthEntryCancelCallback cancel_callback;
   bool confirm_mode;
   bool select_long_pressed;
   bool show_plus_prefix;
@@ -54,13 +55,14 @@ static void prv_down_clicked(ClickRecognizerRef recognizer, void* context);
 static void prv_back_clicked(ClickRecognizerRef recognizer, void* context);
 static void prv_click_config_provider(void* context);
 
-void auth_entry_window_push_with_prefix(const char* title, int max_length, bool show_plus_prefix, AuthEntryCallback callback) {
+void auth_entry_window_push_with_prefix(const char* title, int max_length, bool show_plus_prefix, AuthEntryCallback callback, AuthEntryCancelCallback cancel_callback) {
   Window *window = bwindow_create();
   AuthEntryWindowData *data = bmalloc(sizeof(AuthEntryWindowData));
   memset(data, 0, sizeof(AuthEntryWindowData));
   data->window = window;
   data->max_length = max_length > 0 && max_length < MAX_ENTRY_LENGTH ? max_length : MAX_ENTRY_LENGTH;
   data->callback = callback;
+  data->cancel_callback = cancel_callback;
   data->selected_digit = 1; // Default to '1' to avoid leading zero
   data->confirm_mode = false;
   data->show_plus_prefix = show_plus_prefix;
@@ -74,8 +76,8 @@ void auth_entry_window_push_with_prefix(const char* title, int max_length, bool 
   window_stack_push(window, true);
 }
 
-void auth_entry_window_push(const char* title, int max_length, AuthEntryCallback callback) {
-  auth_entry_window_push_with_prefix(title, max_length, true, callback);
+void auth_entry_window_push(const char* title, int max_length, AuthEntryCallback callback, AuthEntryCancelCallback cancel_callback) {
+  auth_entry_window_push_with_prefix(title, max_length, true, callback, cancel_callback);
 }
 
 static void prv_window_load(Window* window) {
@@ -255,6 +257,9 @@ static void prv_back_clicked(ClickRecognizerRef recognizer, void* context) {
     data->value[data->value_length] = '\0';
     prv_update_display(data);
   } else {
+    if (data->cancel_callback) {
+      data->cancel_callback();
+    }
     window_stack_pop(true);
   }
 }

@@ -26,6 +26,11 @@
 static AuthFlowCompleteCallback s_complete_callback = NULL;
 static bool s_waiting_for_code = false;
 
+static void prv_cancel(void) {
+  s_complete_callback = NULL;
+  s_waiting_for_code = false;
+}
+
 static void prv_phone_entered(const char* value) {
   if (!value || strlen(value) == 0) return;
   char normalized[20];
@@ -74,18 +79,32 @@ static void prv_code_entered(const char* value) {
 void auth_flow_start(AuthFlowCompleteCallback callback) {
   s_complete_callback = callback;
   s_waiting_for_code = false;
-  auth_entry_window_push("Phone Number", 15, prv_phone_entered);
+  auth_entry_window_push("Phone Number", 15, prv_phone_entered, prv_cancel);
 }
 
 void auth_flow_handle_message(uint32_t key) {
   if (key == MESSAGE_KEY_TELEGRAM_CODE_SENT) {
     if (s_waiting_for_code) {
-      auth_entry_window_push_with_prefix("Enter Code", 5, false, prv_code_entered);
+      auth_entry_window_push_with_prefix("Enter Code", 5, false, prv_code_entered, prv_cancel);
     }
   } else if (key == MESSAGE_KEY_TELEGRAM_CONNECTED) {
-    if (s_complete_callback) s_complete_callback(true);
+    if (s_complete_callback) {
+      AuthFlowCompleteCallback cb = s_complete_callback;
+      s_complete_callback = NULL;
+      s_waiting_for_code = false;
+      cb(true);
+    }
   } else if (key == MESSAGE_KEY_TELEGRAM_AUTH_ERROR) {
     result_window_push_persistent("Auth Failed", "Could not sign in to Telegram. Please try again.", NULL, GColorWhite);
-    if (s_complete_callback) s_complete_callback(false);
+    if (s_complete_callback) {
+      AuthFlowCompleteCallback cb = s_complete_callback;
+      s_complete_callback = NULL;
+      s_waiting_for_code = false;
+      cb(false);
+    }
   }
+}
+
+void auth_flow_cancel(void) {
+  prv_cancel();
 }
