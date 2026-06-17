@@ -101,6 +101,7 @@ static ConversationEntry* prv_create_entry(Conversation* conversation) {
   if (conversation->entry_count >= conversation->entry_allocated) {
     ConversationEntry *new_entries = bmalloc(sizeof(ConversationEntry) * (conversation->entry_allocated + 1));
     memcpy(new_entries, conversation->entries, sizeof(ConversationEntry) * conversation->entry_allocated);
+    free(conversation->entries);
     ++conversation->entry_allocated;
     conversation->entries = new_entries;
   }
