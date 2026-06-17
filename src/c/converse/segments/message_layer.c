@@ -15,6 +15,7 @@
  */
 
 #include "message_layer.h"
+#include "../../util/memory/malloc.h"
 #include "../../util/memory/sdk.h"
 #include "../../util/logging.h"
 
@@ -129,17 +130,20 @@ static int prv_get_content_height(MessageLayer* layer) {
     int h2 = 0;
     // we broke to a new line. see if we can figure out where.
     size_t len = strlen(text + offset);
-    for (int i = len; i > 0; --i) {
-      // TODO: maybe we should just copy it? This could cause us trouble with literals...
-      char c = (text+offset)[i];
-      (text+offset)[i] = 0;
-      h2 = graphics_text_layout_get_content_size(text + offset, font, rect, GTextOverflowModeTrailingEllipsis, alignment).h;
-      (text+offset)[i] = c;
+    // Measure prefixes against a scratch copy rather than mutating the live buffer in place:
+    // `text` may point into a streaming ConversationResponse->response, and writing NUL into
+    // the middle of it (even transiently) violates the buffer's invariant. We also start at
+    // len-1 so we never touch the terminator at index len.
+    char *scratch = bmalloc(len + 1);
+    memcpy(scratch, text + offset, len + 1);
+    for (int i = (int)len - 1; i >= 0; --i) {
+      scratch[i] = 0;
+      h2 = graphics_text_layout_get_content_size(scratch, font, rect, GTextOverflowModeTrailingEllipsis, alignment).h;
       if (h2 < height) {
         // now try to backtrack to where in the text we caused this.
         // I can't think of any way to infer this from the sizing, so just go back to a word break.
         for (int j = i - 1; j >= 0; --j) {
-          if ((text+offset)[j] == ' ' || (text+offset)[j] == '-' || (text+offset)[j] == '\n') {
+          if (scratch[j] == ' ' || scratch[j] == '-' || scratch[j] == '\n') {
             i = j+1;
 //            SQUIRE_LOG(APP_LOG_LEVEL_DEBUG, "New line starts \"%s\".", text+offset+i);
             break;
@@ -149,6 +153,7 @@ static int prv_get_content_height(MessageLayer* layer) {
         break;
       }
     }
+    free(scratch);
     data->last_newline_offset = offset;
     content_height += height - h2;
   }
