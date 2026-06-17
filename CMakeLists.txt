@@ -63,7 +63,6 @@ add_executable(tiny_assistant_app
         src/c/util/strings.c
         src/c/util/style.c
         src/c/util/thinking_layer.c
-        src/c/util/time.c
         src/c/util/vector_layer.c
         src/c/util/vector_sequence_layer.c
         src/c/util/memory/malloc.c

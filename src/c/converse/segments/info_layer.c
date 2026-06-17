@@ -151,32 +151,6 @@ static void prv_layer_render(Layer* layer, GContext* ctx) {
   }
 }
 
-static void prv_format_time(time_t when, char* buffer, size_t size) {
-  time_t midnight = time_start_of_today();
-
-  char time_str[10];
-  if (clock_is_24h_style()) {
-    strftime(time_str, sizeof(time_str), "%H:%M", localtime(&when));
-  } else {
-    struct tm* ts = localtime(&when);
-    int hour = ts->tm_hour % 12;
-    if (hour == 0) {
-      hour = 12;
-    }
-    snprintf(time_str, sizeof(time_str), "%d:%02d %s", hour, ts->tm_min, ts->tm_hour < 12 ? "AM" : "PM");
-  }
-
-  if (when < midnight + 86400) {
-    snprintf(buffer, size, "today at %s", time_str);
-  } else if (when < midnight + 86400 * 2) {
-    snprintf(buffer, size, "tomorrow at %s", time_str);
-  } else {
-    char date_str[15];
-    strftime(date_str, sizeof(date_str), "%a, %b %d", localtime(&when));
-    snprintf(buffer, size, "%s at %s", date_str, time_str);
-  }
-}
-
 static char* prv_generate_action_text(ConversationAction* action) {
   char* buffer = bmalloc(50);
   switch (action->type) {
