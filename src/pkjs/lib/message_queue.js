@@ -18,7 +18,6 @@ var MAX_BYTES_IN_FLIGHT = 400;
 
 function MessageQueue() {
     this.queue = [];
-    this.log = null;
     this.messagesInFlight = 0;
     this.bytesInFlight = 0;
 }
@@ -45,22 +44,7 @@ function countBytes(message) {
     return bytes;
 }
 
-MessageQueue.prototype.startLogging = function() {
-    this.log = [];
-};
-
-MessageQueue.prototype.stopLogging = function() {
-    this.log = null;
-}
-
-MessageQueue.prototype.getLog = function() {
-    return this.log || [];
-}
-
 MessageQueue.prototype.enqueue = function(message) {
-    if (this.log) {
-        this.log.push(message);
-    }
     this.queue.push(message);
     if (this.messagesInFlight < 6 && this.bytesInFlight < MAX_BYTES_IN_FLIGHT) {
         console.log('sending immediately, messages in flight: ' + this.messagesInFlight + ', bytes in flight: ' + this.bytesInFlight);

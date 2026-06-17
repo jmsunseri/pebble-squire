@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-var LOGGING_ENABLED = false;
-
 var bundleLoader = require('./lib/bundle_loader');
 var location = require('./location');
 var config = require('./config');
-var actions = require('./actions');
 var messageQueue = require('./lib/message_queue').Queue;
 var telegram = require('./telegram');
-
-var package_json = require('package.json');
 
 function Session(prompt, threadId) {
     this.prompt = prompt;
@@ -32,19 +27,7 @@ function Session(prompt, threadId) {
     this.messageBuffer = '';
 }
 
-function getSettings() {
-    try {
-        return JSON.parse(localStorage.getItem('clay-settings')) || {};
-    } catch (e) {
-        console.error('Failed to parse clay-settings:', e);
-        return {};
-    }
-}
-
 Session.prototype.run = function() {
-    if (LOGGING_ENABLED) {
-        messageQueue.startLogging();
-    }
     console.log("Starting Telegram session...");
 
     var self = this;
@@ -322,77 +305,4 @@ Session.prototype.dequeue = function() {
     messageQueue.dequeue();
 };
 
-// Keep the original WebSocket-based session as fallback
-Session.prototype.runLegacy = function() {
-    if (LOGGING_ENABLED) {
-        messageQueue.startLogging();
-    }
-    console.log("Opening websocket connection...");
-
-    var API_URL = require('./urls').QUERY_URL;
-    var url = API_URL + '?prompt=' + encodeURIComponent(this.prompt) + '&token=' + exports.userToken;
-
-    if (location.isReady() && config.isLocationEnabled()) {
-        var loc = location.getPos();
-        url += '&lon=' + loc.lon + '&lat=' + loc.lat;
-    } else {
-        url += '&location=unknown';
-    }
-    if (this.threadId) {
-        url += '&threadId=' + encodeURIComponent(this.threadId);
-    }
-    url += '&tzOffset=' + (-(new Date()).getTimezoneOffset());
-    url += '&actions=' + actions.getSupportedActions().join(',');
-    var settings = getSettings();
-    url += '&units=' + settings['UNIT_PREFERENCE'] || '';
-    url += '&lang=' + settings['LANGUAGE_CODE'] || '';
-    url += '&version=' + package_json['version'];
-
-    console.log(url);
-    this.ws = new WebSocket(url);
-    this.ws.addEventListener('message', this.handleLegacyMessage.bind(this));
-    this.ws.addEventListener('close', this.handleClose.bind(this));
-};
-
-Session.prototype.handleLegacyMessage = function(event) {
-    var message = event.data;
-    console.log(message);
-
-    if (message[0] == 'c') {
-        this.hasOpenDialog = true;
-        this.enqueue({
-            CHAT: message.substring(1)
-        });
-    } else if (message[0] == 'd') {
-        this.hasOpenDialog = false;
-        this.enqueue({
-            CHAT_DONE: true
-        });
-        if (LOGGING_ENABLED) {
-            console.log(JSON.stringify(messageQueue.getLog()));
-            messageQueue.stopLogging();
-        }
-    } else if (message[0] == 'a') {
-        actions.handleAction(this, this.ws, message.substring(1));
-    } else if (message[0] == 't') {
-        this.enqueue({
-            THREAD_ID: message.substring(1)
-        });
-    } else if (message[0] == 'w') {
-        this.enqueue({
-            WARNING: message.substring(1)
-        });
-    }
-};
-
-Session.prototype.handleClose = function(event) {
-    console.log("Connection closed. Code: " + event.code + ". Reason: \"" + event.reason + "\". Was clean: " + event.wasClean);
-    this.enqueue({
-        CLOSE_CODE: event.code,
-        CLOSE_REASON: event.reason,
-        CLOSE_WAS_CLEAN: event.wasClean
-    });
-};
-
 exports.Session = Session;
-exports.userToken = null;
