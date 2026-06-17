@@ -183,14 +183,14 @@ function disconnect() {
         if (client) {
             client.disconnect().then(function() {
                 console.log('[client] Disconnected successfully');
+            }).catch(function(err) {
+                console.error('[client] Disconnect failed: ' + (err.message || err) + ' — clearing local state anyway');
+            }).then(function() {
                 isConnected = false;
                 client = null;
                 currentUser = null;
                 session.clearSession();
                 resolve();
-            }).catch(function(err) {
-                console.error('[client] Disconnect failed: ' + (err.message || err));
-                reject(err);
             });
         } else {
             console.log('[client] No client to disconnect, clearing session');
