@@ -39,7 +39,8 @@ typedef struct {
   int max_length;
   AuthEntryCallback callback;
   AuthEntryCancelCallback cancel_callback;
-  bool confirm_mode;
+  ActionMenu* action_menu;
+  bool confirm_choice;
   bool select_long_pressed;
   bool show_plus_prefix;
 } AuthEntryWindowData;
@@ -54,6 +55,9 @@ static void prv_up_clicked(ClickRecognizerRef recognizer, void* context);
 static void prv_down_clicked(ClickRecognizerRef recognizer, void* context);
 static void prv_back_clicked(ClickRecognizerRef recognizer, void* context);
 static void prv_click_config_provider(void* context);
+static void prv_present_confirm_menu(AuthEntryWindowData* data);
+static void prv_confirm_menu_selected(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
+static void prv_action_menu_closed(ActionMenu *action_menu, const ActionMenuItem *performed_action, void *context);
 
 void auth_entry_window_push_with_prefix(const char* title, int max_length, bool show_plus_prefix, AuthEntryCallback callback, AuthEntryCancelCallback cancel_callback) {
   Window *window = bwindow_create();
@@ -64,7 +68,7 @@ void auth_entry_window_push_with_prefix(const char* title, int max_length, bool 
   data->callback = callback;
   data->cancel_callback = cancel_callback;
   data->selected_digit = 1; // Default to '1' to avoid leading zero
-  data->confirm_mode = false;
+  data->confirm_choice = false;
   data->show_plus_prefix = show_plus_prefix;
   snprintf(data->title_text, sizeof(data->title_text), "%s", title);
   window_set_background_color(window, GColorWhite);
@@ -131,6 +135,10 @@ static void prv_window_load(Window* window) {
 
 static void prv_window_unload(Window* window) {
   AuthEntryWindowData *data = window_get_user_data(window);
+  if (data->action_menu) {
+    action_menu_close(data->action_menu, false);
+    data->action_menu = NULL;
+  }
   text_layer_destroy(data->title_layer);
   text_layer_destroy(data->value_layer);
   text_layer_destroy(data->digit_layer);
@@ -140,24 +148,9 @@ static void prv_window_unload(Window* window) {
   window_destroy(window);
 }
 
-static void prv_set_edit_mode(AuthEntryWindowData* data);
-static void prv_set_confirm_mode(AuthEntryWindowData* data);
-
 static void prv_update_display(AuthEntryWindowData* data) {
   static char digit_text[2];
   static char display_value[MAX_ENTRY_LENGTH + 4];
-  if (data->confirm_mode) {
-    text_layer_set_text(data->title_layer, "Confirm?");
-    text_layer_set_text(data->digit_layer, " ");
-    if (data->show_plus_prefix) {
-      snprintf(display_value, sizeof(display_value), "+%s", data->value);
-    } else {
-      snprintf(display_value, sizeof(display_value), "%s", data->value);
-    }
-    text_layer_set_text(data->value_layer, display_value);
-    return;
-  }
-
   digit_text[0] = PRV_CHARSET[data->selected_digit];
   digit_text[1] = '\0';
   text_layer_set_text(data->digit_layer, digit_text);
@@ -179,18 +172,36 @@ static void prv_submit(AuthEntryWindowData *data) {
   window_stack_pop(true);
 }
 
-static void prv_set_confirm_mode(AuthEntryWindowData* data) {
-  data->confirm_mode = true;
-  text_layer_set_text(data->hint_layer, "SEL: confirm");
-  text_layer_set_text(data->hint2_layer, "BACK: edit");
-  prv_update_display(data);
+static void prv_present_confirm_menu(AuthEntryWindowData* data) {
+  ActionMenuLevel* root_level = baction_menu_level_create(2);
+  action_menu_level_add_action(root_level, "Confirm", prv_confirm_menu_selected, (void *)true);
+  action_menu_level_add_action(root_level, "Edit", prv_confirm_menu_selected, (void *)false);
+  ActionMenuConfig config = (ActionMenuConfig) {
+    .root_level = root_level,
+    .colors = {
+      .background = BRANDED_BACKGROUND_COLOUR,
+      .foreground = gcolor_legible_over(BRANDED_BACKGROUND_COLOUR),
+    },
+    .align = ActionMenuAlignCenter,
+    .context = data,
+    .did_close = prv_action_menu_closed,
+  };
+  data->action_menu = action_menu_open(&config);
 }
 
-static void prv_set_edit_mode(AuthEntryWindowData* data) {
-  data->confirm_mode = false;
-  text_layer_set_text(data->hint_layer, "UP/DN: digit | SEL: add");
-  text_layer_set_text(data->hint2_layer, "hold SEL: done");
-  prv_update_display(data);
+static void prv_confirm_menu_selected(ActionMenu *action_menu, const ActionMenuItem *action, void *context) {
+  AuthEntryWindowData *data = context;
+  data->confirm_choice = (int)action_menu_item_get_action_data(action);
+}
+
+static void prv_action_menu_closed(ActionMenu *action_menu, const ActionMenuItem *performed_action, void *context) {
+  AuthEntryWindowData *data = context;
+  action_menu_hierarchy_destroy(action_menu_get_root_level(action_menu), NULL, NULL);
+  data->action_menu = NULL;
+  if (data->confirm_choice) {
+    data->confirm_choice = false;
+    prv_submit(data);
+  }
 }
 
 static void prv_select_clicked(ClickRecognizerRef recognizer, void* context) {
@@ -199,12 +210,8 @@ static void prv_select_clicked(ClickRecognizerRef recognizer, void* context) {
     data->select_long_pressed = false;
     return;
   }
-  if (data->confirm_mode) {
-    prv_submit(data);
-    return;
-  }
   if (data->value_length >= data->max_length) {
-    prv_set_confirm_mode(data);
+    prv_present_confirm_menu(data);
     return;
   }
 
@@ -213,7 +220,7 @@ static void prv_select_clicked(ClickRecognizerRef recognizer, void* context) {
   data->value[data->value_length] = '\0';
 
   if (data->value_length >= data->max_length) {
-    prv_set_confirm_mode(data);
+    prv_present_confirm_menu(data);
   }
 
   prv_update_display(data);
@@ -223,7 +230,7 @@ static void prv_select_long_click_handler(ClickRecognizerRef recognizer, void* c
   AuthEntryWindowData *data = window_get_user_data((Window*)context);
   data->select_long_pressed = true;
   if (data->value_length > 0) {
-    prv_set_confirm_mode(data);
+    prv_present_confirm_menu(data);
   }
 }
 
@@ -234,24 +241,18 @@ static void prv_select_long_click_release_handler(ClickRecognizerRef recognizer,
 
 static void prv_up_clicked(ClickRecognizerRef recognizer, void* context) {
   AuthEntryWindowData *data = window_get_user_data((Window*)context);
-  if (data->confirm_mode) return;
   data->selected_digit = (data->selected_digit + 1) % PRV_CHARSET_SIZE;
   prv_update_display(data);
 }
 
 static void prv_down_clicked(ClickRecognizerRef recognizer, void* context) {
   AuthEntryWindowData *data = window_get_user_data((Window*)context);
-  if (data->confirm_mode) return;
   data->selected_digit = (data->selected_digit + PRV_CHARSET_SIZE - 1) % PRV_CHARSET_SIZE;
   prv_update_display(data);
 }
 
 static void prv_back_clicked(ClickRecognizerRef recognizer, void* context) {
   AuthEntryWindowData *data = window_get_user_data((Window*)context);
-  if (data->confirm_mode) {
-    prv_set_edit_mode(data);
-    return;
-  }
   if (data->value_length > 0) {
     data->value_length--;
     data->value[data->value_length] = '\0';
