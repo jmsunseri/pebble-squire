@@ -17,6 +17,7 @@
 #include "about_window.h"
 
 #include <pebble.h>
+#include <string.h>
 
 #include "../util/style.h"
 #include "../util/formatted_text_layer.h"
@@ -56,10 +57,31 @@ static void prv_window_load(Window* window) {
   char *about_text = bmalloc(res_size + 1);
   resource_load(res_handle, (uint8_t*)about_text, res_size);
   about_text[res_size] = '\0';
-  data->about_text = bmalloc(res_size + 7);
+
   VersionInfo version = version_get_current();
-  snprintf(data->about_text, res_size + 7, about_text, version.major, version.minor);
-  data->about_text[res_size+6] = '\0';
+  char version_str[8];
+  snprintf(version_str, sizeof(version_str), "%d.%d", version.major, version.minor);
+  size_t version_len = strlen(version_str);
+
+  static const char placeholder[] = "%d.%d";
+  const size_t placeholder_len = sizeof(placeholder) - 1;
+  size_t count = 0;
+  for (const char *p = about_text; (p = strstr(p, placeholder)) != NULL; p += placeholder_len) {
+    count++;
+  }
+  data->about_text = bmalloc(res_size - count * placeholder_len + count * version_len + 1);
+  char *dst = data->about_text;
+  const char *src = about_text;
+  const char *found;
+  while ((found = strstr(src, placeholder)) != NULL) {
+    memcpy(dst, src, found - src);
+    dst += found - src;
+    memcpy(dst, version_str, version_len);
+    dst += version_len;
+    src = found + placeholder_len;
+  }
+  strcpy(dst, src);
+  free(about_text);
 
   window_set_background_color(window, GColorWhite);
 
