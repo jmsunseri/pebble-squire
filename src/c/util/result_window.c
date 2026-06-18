@@ -36,6 +36,7 @@ typedef struct {
   GDrawCommandImage* image;
   AppTimer* timer;
   bool persistent;
+  uint32_t timeout_ms;
 } ResultWindowData;
 
 static void prv_window_load(Window* window);
@@ -43,7 +44,7 @@ static void prv_window_unload(Window* window);
 static void prv_window_appear(Window* window);
 static void prv_timer_expired(void* context);
 
-void result_window_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color) {
+static void prv_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color, bool persistent, uint32_t timeout_ms) {
   Window* window = bwindow_create();
   ResultWindowData* data = bmalloc(sizeof(ResultWindowData));
   memset(data, 0, sizeof(ResultWindowData));
@@ -59,7 +60,8 @@ void result_window_push(const char* title, const char* text, GDrawCommandImage *
   strncpy(data->title_text, title, strlen(title) + 1);
   data->text_text = bmalloc(strlen(text) + 1);
   strncpy(data->text_text, text, strlen(text) + 1);
-  data->persistent = false;
+  data->persistent = persistent;
+  data->timeout_ms = timeout_ms;
   window_set_user_data(window, data);
   window_set_window_handlers(window, (WindowHandlers) {
     .load = prv_window_load,
@@ -69,29 +71,16 @@ void result_window_push(const char* title, const char* text, GDrawCommandImage *
   window_stack_push(window, true);
 }
 
+void result_window_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color) {
+  prv_push(title, text, image, background_color, false, 4000);
+}
+
+void result_window_push_with_timeout(const char* title, const char* text, GDrawCommandImage *image, GColor background_color, uint32_t timeout_ms) {
+  prv_push(title, text, image, background_color, false, timeout_ms);
+}
+
 void result_window_push_persistent(const char* title, const char* text, GDrawCommandImage *image, GColor background_color) {
-  Window* window = bwindow_create();
-  ResultWindowData* data = bmalloc(sizeof(ResultWindowData));
-  memset(data, 0, sizeof(ResultWindowData));
-  GColor text_color = gcolor_legible_over(background_color);
-#ifdef PBL_COLOR
-  window_set_background_color(window, background_color);
-  data->background_color = background_color;
-  data->text_color = text_color;
-#endif
-  data->image = image;
-  data->title_text = bmalloc(strlen(title) + 1);
-  strncpy(data->title_text, title, strlen(title) + 1);
-  data->text_text = bmalloc(strlen(text) + 1);
-  strncpy(data->text_text, text, strlen(text) + 1);
-  data->persistent = true;
-  window_set_user_data(window, data);
-  window_set_window_handlers(window, (WindowHandlers) {
-    .load = prv_window_load,
-    .unload = prv_window_unload,
-    .appear = prv_window_appear,
-  });
-  window_stack_push(window, true);
+  prv_push(title, text, image, background_color, true, 0);
 }
 
 static void prv_window_load(Window* window) {
@@ -172,7 +161,7 @@ static void prv_window_appear(Window* window) {
     data->timer = NULL;
   }
   if (!data->persistent) {
-    data->timer = app_timer_register(4000, prv_timer_expired, window);
+    data->timer = app_timer_register(data->timeout_ms > 0 ? data->timeout_ms : 4000, prv_timer_expired, window);
   }
 }
 

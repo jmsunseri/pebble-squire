@@ -87,14 +87,6 @@ static void prv_app_message_handler(DictionaryIterator *iter, void *context) {
       auth_flow_handle_message(tuple->key, NULL);
     } else if (tuple->key == MESSAGE_KEY_TELEGRAM_AUTH_ERROR) {
       auth_flow_handle_message(tuple->key, NULL);
-    } else if (tuple->key == MESSAGE_KEY_TELEGRAM_PENDING_ACTION) {
-      SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Echoing TELEGRAM_PENDING_ACTION to phone");
-      char *pending_action = tuple->value->cstring;
-      DictionaryIterator *out_iter;
-      if (app_message_outbox_begin(&out_iter) == APP_MSG_OK) {
-        dict_write_cstring(out_iter, MESSAGE_KEY_TELEGRAM_PENDING_ACTION, pending_action);
-        app_message_outbox_send();
-      }
     }
   }
 }

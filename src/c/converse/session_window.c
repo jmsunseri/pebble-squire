@@ -110,7 +110,7 @@ static void prv_auth_flow_complete(bool success, const char* agent_username) {
     } else {
       snprintf(message, sizeof(message), "Set your agent bot username in the app settings on your phone so messages go to the right bot.");
     }
-    result_window_push("Signed In", message, NULL, GColorWhite);
+    result_window_push_with_timeout("Signed In", message, NULL, GColorWhite, 10000);
   }
 }
 

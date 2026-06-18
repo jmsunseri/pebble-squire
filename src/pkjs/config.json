@@ -74,14 +74,6 @@
                 "type": "button",
                 "id": "disconnectBtn",
                 "defaultValue": "Disconnect"
-            },
-            {
-                "type": "input",
-                "id": "telegramPendingAction",
-                "messageKey": "TELEGRAM_PENDING_ACTION",
-                "label": "",
-                "defaultValue": "",
-                "attributes": {"type": "hidden"}
             }
         ]
     },

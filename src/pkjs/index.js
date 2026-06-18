@@ -109,20 +109,6 @@ function handleAppMessage(e) {
         return;
     }
 
-    if ('TELEGRAM_PENDING_ACTION' in data) {
-        ensureTelegramBundle();
-        var action = {};
-        try { action = JSON.parse(data.TELEGRAM_PENDING_ACTION); } catch (e) { console.error('[index] Failed to parse TELEGRAM_PENDING_ACTION: ' + data.TELEGRAM_PENDING_ACTION); }
-        console.log('[index] Telegram pending action: ' + JSON.stringify(action));
-        if (action.action === 'disconnect') {
-            handleTelegramDisconnect();
-            return;
-        }
-        // Auth via config page is no longer supported; sign in from the watch instead.
-        console.log('[index] Ignoring non-disconnect pending action from config page');
-        return;
-    }
-
     if ('LOCATION_ENABLED' in data) {
         config.setSetting("LOCATION_ENABLED", !!data.LOCATION_ENABLED);
         console.log("Location enabled: " + config.isLocationEnabled());

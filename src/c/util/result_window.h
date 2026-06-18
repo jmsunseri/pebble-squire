@@ -20,6 +20,7 @@
 #include <pebble.h>
 
 void result_window_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color);
+void result_window_push_with_timeout(const char* title, const char* text, GDrawCommandImage *image, GColor background_color, uint32_t timeout_ms);
 void result_window_push_persistent(const char* title, const char* text, GDrawCommandImage *image, GColor background_color);
 
 #endif //RESULT_WINDOW_H
