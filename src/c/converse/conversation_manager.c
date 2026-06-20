@@ -44,9 +44,16 @@ static bool prv_handle_memory_pressure(void *context);
 
 static ConversationManager* s_conversation_manager;
 
+// Pebble's per-message hard limit is ~8 KB. We request 5000 bytes so that a
+// single app message (one dictionary tuple) can carry a chunk with headroom,
+// while the pkjs side splits agent responses into 4000-byte chunks to stay
+// below this budget (see src/pkjs/lib/message_queue.js). Keeping this modest
+// preserves watch heap — see prv_handle_memory_pressure for why that matters.
+#define SQUIRE_APP_MESSAGE_BUFFER_SIZE 5000
+
 void conversation_manager_init() {
-  events_app_message_request_outbox_size(1024);
-  events_app_message_request_inbox_size(1024);
+  events_app_message_request_outbox_size(SQUIRE_APP_MESSAGE_BUFFER_SIZE);
+  events_app_message_request_inbox_size(SQUIRE_APP_MESSAGE_BUFFER_SIZE);
 }
 
 ConversationManager* conversation_manager_create() {

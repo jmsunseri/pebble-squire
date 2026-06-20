@@ -16,6 +16,15 @@
 
 var MAX_BYTES_IN_FLIGHT = 400;
 
+// The watch allocates SQUIRE_APP_MESSAGE_BUFFER_SIZE (5000) bytes for its
+// app-message inbox/outbox (see src/c/converse/conversation_manager.c). A
+// single app message must fit within that budget or it gets dropped, so we
+// chunk any large CHAT payload into pieces below this limit. The watch's
+// conversation layer reassembles CHAT fragments by appending them to the
+// last open response (see conversation_add_response_fragment), so splitting
+// is transparent to the UI.
+var MAX_CHAT_CHUNK_SIZE = 4000;
+
 function MessageQueue() {
     this.queue = [];
     this.messagesInFlight = 0;
@@ -44,48 +53,80 @@ function countBytes(message) {
     return bytes;
 }
 
+// Keys whose string payloads the watch reassembles across multiple app
+// messages. For CHAT the conversation layer appends each fragment to the
+// last open response (conversation_add_response_fragment), so a long agent
+// reply can be safely split into several smaller app messages.
+var REASSEMBLABLE_KEYS = ['CHAT'];
+
 MessageQueue.prototype.enqueue = function(message) {
     this.queue.push(message);
-    if (this.messagesInFlight < 6 && this.bytesInFlight < MAX_BYTES_IN_FLIGHT) {
-        console.log('sending immediately, messages in flight: ' + this.messagesInFlight + ', bytes in flight: ' + this.bytesInFlight);
-        this.dequeue();
-    } else {
-        console.log('enqueued, queue length: ' + this.queue.length + ', bytes: ' + this.bytesInFlight);
-    }
+    this.pump();
 }
 
-MessageQueue.prototype.dequeue = function() {
-    var m = this.queue.shift();
-    var mSize = countBytes(m);
-    console.log('sending message, remaining: ' + this.queue.length + ', bytes in flight: ' + this.bytesInFlight);
-    this.messagesInFlight++;
-    this.bytesInFlight += mSize;
-    Pebble.sendAppMessage(m, (function() {
-        this.messagesInFlight--;
-        this.bytesInFlight -= mSize;
-        console.log('sent successfully');
-        if (this.queue.length > 0) {
-            if (this.bytesInFlight > MAX_BYTES_IN_FLIGHT) {
-                console.log('still too many bytes in flight (' + this.bytesInFlight + '), waiting');
+MessageQueue.prototype.pump = function() {
+    if (this.messagesInFlight >= 6 || this.bytesInFlight >= MAX_BYTES_IN_FLIGHT) {
+        console.log('enqueued, queue length: ' + this.queue.length + ', bytes: ' + this.bytesInFlight);
+        return;
+    }
+    var message = this.queue.shift();
+    if (!message) return;
+
+    var self = this;
+    function send(msg) {
+        var mSize = countBytes(msg);
+        if (mSize > 5000) {
+            console.warn('message exceeds 5000-byte watch inbox limit (' + mSize + ' bytes), will likely be dropped');
+        }
+        console.log('sending message, remaining: ' + self.queue.length + ', bytes in flight: ' + self.bytesInFlight);
+        self.messagesInFlight++;
+        self.bytesInFlight += mSize;
+        Pebble.sendAppMessage(msg, (function() {
+            self.messagesInFlight--;
+            self.bytesInFlight -= mSize;
+            console.log('sent successfully');
+            if (self.queue.length > 0) {
+                if (self.bytesInFlight > MAX_BYTES_IN_FLIGHT) {
+                    console.log('still too many bytes in flight (' + self.bytesInFlight + '), waiting');
+                } else {
+                    self.pump();
+                }
             } else {
-                console.log('next');
-                this.dequeue();
+                console.log('done');
             }
-        } else {
-            console.log('done');
+        }).bind(self), (function() {
+            self.messagesInFlight--;
+            self.bytesInFlight -= mSize;
+            console.log('failed, message lost. carrying on shortly.');
+            if (self.queue.length > 0) {
+                setTimeout(function() { self.pump(); }, 10);
+            } else {
+                console.log('done');
+            }
+        }).bind(self));
+    }
+
+    // Split oversized reassemblable payloads into chunks the watch can accept.
+    for (var i = 0; i < REASSEMBLABLE_KEYS.length; i++) {
+        var key = REASSEMBLABLE_KEYS[i];
+        if (message.hasOwnProperty(key) && typeof message[key] === 'string' &&
+            message[key].length > MAX_CHAT_CHUNK_SIZE) {
+            var full = message[key];
+            var chunks = [];
+            for (var offset = 0; offset < full.length; offset += MAX_CHAT_CHUNK_SIZE) {
+                chunks.push(full.substring(offset, offset + MAX_CHAT_CHUNK_SIZE));
+            }
+            console.log('chunking ' + key + ' (' + full.length + ' bytes) into ' + chunks.length + ' pieces');
+            // unshift in reverse so they come off the front in order.
+            for (var c = chunks.length - 1; c >= 0; c--) {
+                this.queue.unshift({ CHAT: chunks[c] });
+            }
+            this.pump();
+            return;
         }
-    }).bind(this), (function() {
-        this.messagesInFlight--;
-        this.bytesInFlight -= mSize;
-        console.log('failed, message lost. carrying on shortly.');
-        if (this.queue.length > 0) {
-            setTimeout(function() {
-                this.dequeue();
-            }.bind(this), 10);
-        } else {
-            console.log('done');
-        }
-    }).bind(this));
+    }
+
+    send(message);
 }
 
 exports.Queue = new MessageQueue();
