@@ -191,7 +191,7 @@ static void prv_history_loaded_callback(void) {
     window_stack_remove(s_loading_window, true);
     // Unload handler will destroy resources
   }
-  session_window_push_with_history(0, NULL, history_get_thread_id());
+  session_window_push_conversation(0, 4);
 }
 
 static void prv_push_loading_window(void) {
@@ -219,7 +219,7 @@ static void prv_up_clicked(ClickRecognizerRef recognizer, void *context) {
 
 static void prv_open_conversation(void) {
   if (history_is_available()) {
-    session_window_push_with_history(0, NULL, history_get_thread_id());
+    session_window_push_conversation(0, 4);
   } else if (history_is_loading()) {
     // Wait for history to load before deciding whether to show history or start fresh
     history_set_done_callback(prv_history_loaded_callback);

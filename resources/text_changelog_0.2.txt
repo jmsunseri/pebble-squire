@@ -16,6 +16,8 @@ This release makes Telegram sign-in reliable and easier to recover from.
 - Up now shows your recent prompts when Telegram history is available, so you can repeat one without retyping it. The canned prompts remain the fallback.
 - The Down menu now has Conversation, which reopens your last chat with the last few messages.
 - Starting a question now continues the last thread and shows its last two messages for context.
+- Agent "Self-improvement review:" messages and "Working —" progress updates are filtered out and never shown on the watch.
+- History keeps up to eight recent messages; a new question shows the last two, and the Conversation view shows the last four.
 - A long answer no longer closes the conversation at the quick-launch timeout; it stays open while the agent is still working.
 
 ### Under the hood

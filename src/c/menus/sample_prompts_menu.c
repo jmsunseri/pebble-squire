@@ -231,8 +231,9 @@ static void prv_select_click(MenuLayer *menu_layer, MenuIndex *cell_index, void 
   const char *prompt = data->prompts[cell_index->row];
   const char *thread_id = history_get_thread_id();
   if (data->using_history && thread_id && thread_id[0]) {
-    // Reuse the prompt in the conversation it came from.
-    session_window_push_with_history(0, (char*)prompt, thread_id);
+    // Reuse the prompt in the conversation it came from, with the last
+    // exchange visible.
+    session_window_push_with_history_limit(0, (char*)prompt, thread_id, 2);
   } else {
     session_window_push(0, (char*)prompt);
   }

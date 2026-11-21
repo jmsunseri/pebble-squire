@@ -19,6 +19,7 @@ var location = require('./location');
 var config = require('./config');
 var messageQueue = require('./lib/message_queue').Queue;
 var telegram = require('./telegram');
+var isExcludedMessage = require('./message_filter').isExcludedMessage;
 
 function Session(prompt, threadId) {
     this.prompt = prompt;
@@ -215,6 +216,10 @@ Session.prototype.listenForResponse = function(client, botUsername, resolve, rej
                     if (!msg || !msg.message) return;
                     if (processedIds[msg.id]) return;
                     processedIds[msg.id] = true;
+                    if (isExcludedMessage(msg.message)) {
+                        console.log('[session] Ignoring excluded message id=', msg.id);
+                        return;
+                    }
                     console.log('[session] raw message out=', msg.out, 'id=', msg.id, 'text=', formatLoggedMessage(msg.message));
                     resetIdleTimeout();
                     self.handleIncomingMessage(msg.message, done);
@@ -283,6 +288,11 @@ function formatLoggedMessage(message) {
 }
 
 Session.prototype.handleIncomingMessage = function(message, resolve) {
+    if (isExcludedMessage(message)) {
+        console.log('Ignoring excluded message');
+        return;
+    }
+
     console.log('Received message:', formatLoggedMessage(message));
 
     this.hasOpenDialog = true;

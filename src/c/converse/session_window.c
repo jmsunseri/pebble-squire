@@ -117,12 +117,16 @@ static void prv_auth_flow_complete(bool success, const char* agent_username) {
 }
 
 void session_window_push_with_history(int timeout, char *starting_prompt, const char *thread_id) {
+  session_window_push_with_history_limit(timeout, starting_prompt, thread_id, 0);
+}
+
+void session_window_push_with_history_limit(int timeout, char *starting_prompt, const char *thread_id, int message_limit) {
   // Check if Telegram is connected
   if (!settings_is_telegram_connected()) {
     auth_flow_start(prv_auth_flow_complete);
     return;
   }
-  prv_push_actual_session_window(timeout, starting_prompt, thread_id, 0, false);
+  prv_push_actual_session_window(timeout, starting_prompt, thread_id, message_limit, false);
 }
 
 void session_window_push_recent(int timeout, int message_limit) {
@@ -134,6 +138,16 @@ void session_window_push_recent(int timeout, int message_limit) {
   // visible for context, and listen immediately.
   const char* thread_id = history_is_available() ? history_get_thread_id() : NULL;
   prv_push_actual_session_window(timeout, NULL, thread_id, message_limit, true);
+}
+
+void session_window_push_conversation(int timeout, int message_limit) {
+  if (!settings_is_telegram_connected()) {
+    auth_flow_start(prv_auth_flow_complete);
+    return;
+  }
+  // Reopen the last conversation for reading, without starting dictation.
+  const char* thread_id = history_is_available() ? history_get_thread_id() : NULL;
+  prv_push_actual_session_window(timeout, NULL, thread_id, message_limit, false);
 }
 
 static void prv_push_actual_session_window(int timeout, char *starting_prompt, const char *thread_id, int history_limit, bool dictation_after_history) {

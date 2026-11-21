@@ -1,14 +1,60 @@
 var messageQueue = require('./lib/message_queue').Queue;
 var bundleLoader = require('./lib/bundle_loader');
 var telegram = require('./telegram');
+var isExcludedMessage = require('./message_filter').isExcludedMessage;
 
-var HISTORY_LIMIT = 4;
+var HISTORY_LIMIT = 8;
 
 function formatLoggedMessage(message) {
     if (!message) return '';
     var withoutSystem = message.replace(/<system>[\s\S]*?<\/system>/g, '').trim();
     if (withoutSystem.length <= 100) return withoutSystem;
     return withoutSystem.substring(0, 50) + '...' + withoutSystem.substring(withoutSystem.length - 50);
+}
+
+function buildHistory(messages) {
+    var historyEntries = [];
+    for (var i = 0; i < messages.length && historyEntries.length < HISTORY_LIMIT; i++) {
+        var msg = messages[i];
+        if (!msg || !(msg.message && msg.message.length > 0)) {
+            if (msg && msg.out !== true && msg.out !== 1) {
+                console.log('[history] bot empty msg _text=' + JSON.stringify(msg._text) + ' media=' + (msg.media ? msg.media.className : 'none') + ' action=' + (msg.action ? msg.action.className : 'none'));
+            }
+            continue;
+        }
+
+        var text = msg.message;
+        var isOwn = msg.out === true || msg.out === 1;
+        console.log('[history] raw message out=', msg.out, 'text=', formatLoggedMessage(text));
+
+        if (isOwn) {
+            var promptText = text;
+            if (promptText.indexOf('[thread:') === 0) {
+                promptText = promptText.substring(promptText.indexOf('] ') + 2);
+            }
+            promptText = promptText.replace(/\s*<system>[\s\S]*?<\/system>\s*/, '');
+            promptText = promptText.trim();
+            if (promptText.length > 0 && !isExcludedMessage(promptText)) {
+                historyEntries.push({ type: 'prompt', text: promptText });
+            }
+        } else if (text.length > 0 && !isExcludedMessage(text)) {
+            historyEntries.push({ type: 'response', text: text });
+        }
+    }
+
+    var threadId = null;
+    for (var j = 0; j < messages.length; j++) {
+        var m = messages[j];
+        if (m && m.message && m.message.indexOf('[thread:') === 0) {
+            var end = m.message.indexOf(']');
+            if (end !== -1) {
+                threadId = m.message.substring('[thread:'.length, end);
+                break;
+            }
+        }
+    }
+
+    return { entries: historyEntries, threadId: threadId };
 }
 
 function fetchAndSendHistory() {
@@ -36,7 +82,7 @@ function fetchAndSendHistory() {
         }
         var cleanUsername = botUsername.replace(/^@/, '');
 
-        client.getMessages(cleanUsername, { limit: 20 }).then(function(messages) {
+        client.getMessages(cleanUsername, { limit: 30 }).then(function(messages) {
             console.log('[history] total messages returned: ' + (messages ? messages.length : 0));
             if (!messages || messages.length === 0) {
                 console.log('[history] No messages found');
@@ -51,36 +97,8 @@ function fetchAndSendHistory() {
                 }
             }
 
-            var historyEntries = [];
-            for (var i = 0; i < messages.length && historyEntries.length < HISTORY_LIMIT; i++) {
-                var msg = messages[i];
-                if (!msg || !(msg.message && msg.message.length > 0)) {
-                    if (msg && msg.out !== true && msg.out !== 1) {
-                        console.log('[history] bot empty msg _text=' + JSON.stringify(msg._text) + ' media=' + (msg.media ? msg.media.className : 'none') + ' action=' + (msg.action ? msg.action.className : 'none'));
-                    }
-                    continue;
-                }
-
-                var text = msg.message;
-                var isOwn = msg.out === true || msg.out === 1;
-                console.log('[history] raw message out=', msg.out, 'text=', formatLoggedMessage(text));
-
-                if (isOwn) {
-                    var promptText = text;
-                    if (promptText.indexOf('[thread:') === 0) {
-                        promptText = promptText.substring(promptText.indexOf('] ') + 2);
-                    }
-                    promptText = promptText.replace(/\s*<system>[\s\S]*?<\/system>\s*/, '');
-                    promptText = promptText.trim();
-                    if (promptText.length > 0) {
-                        historyEntries.push({ type: 'prompt', text: promptText });
-                    }
-                } else {
-                    if (text.length > 0) {
-                        historyEntries.push({ type: 'response', text: text });
-                    }
-                }
-            }
+            var history = buildHistory(messages);
+            var historyEntries = history.entries;
 
             if (historyEntries.length === 0) {
                 console.log('[history] No usable history entries');
@@ -88,20 +106,8 @@ function fetchAndSendHistory() {
                 return;
             }
 
-            var threadId = null;
-            for (var j = 0; j < messages.length; j++) {
-                var m = messages[j];
-                if (m && m.message && m.message.indexOf('[thread:') === 0) {
-                    var end = m.message.indexOf(']');
-                    if (end !== -1) {
-                        threadId = m.message.substring('[thread:'.length, end);
-                        break;
-                    }
-                }
-            }
-
-            if (threadId) {
-                messageQueue.enqueue({ HISTORY_THREAD_ID: threadId });
+            if (history.threadId) {
+                messageQueue.enqueue({ HISTORY_THREAD_ID: history.threadId });
             }
 
             for (var k = historyEntries.length - 1; k >= 0; k--) {
@@ -129,3 +135,4 @@ function sendHistoryDone() {
 }
 
 exports.fetchAndSendHistory = fetchAndSendHistory;
+exports.buildHistory = buildHistory;
