@@ -60,7 +60,7 @@ static void prv_present_confirm_menu(AuthEntryWindowData* data);
 static void prv_confirm_menu_selected(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
 static void prv_action_menu_closed(ActionMenu *action_menu, const ActionMenuItem *performed_action, void *context);
 
-void auth_entry_window_push_with_prefix(const char* title, int max_length, bool show_plus_prefix, AuthEntryCallback callback, AuthEntryCancelCallback cancel_callback) {
+void auth_entry_window_push_with_value(const char* title, int max_length, bool show_plus_prefix, const char* initial_value, AuthEntryCallback callback, AuthEntryCancelCallback cancel_callback) {
   Window *window = bwindow_create();
   AuthEntryWindowData *data = bmalloc(sizeof(AuthEntryWindowData));
   memset(data, 0, sizeof(AuthEntryWindowData));
@@ -71,6 +71,15 @@ void auth_entry_window_push_with_prefix(const char* title, int max_length, bool 
   data->selected_digit = 1; // Default to '1' to avoid leading zero
   data->confirm_choice = false;
   data->show_plus_prefix = show_plus_prefix;
+  if (initial_value) {
+    size_t initial_length = strlen(initial_value);
+    if (initial_length > (size_t)data->max_length) {
+      initial_length = data->max_length;
+    }
+    memcpy(data->value, initial_value, initial_length);
+    data->value[initial_length] = '\0';
+    data->value_length = (int)initial_length;
+  }
   snprintf(data->title_text, sizeof(data->title_text), "%s", title);
   window_set_background_color(window, GColorWhite);
   window_set_user_data(window, data);
@@ -81,8 +90,12 @@ void auth_entry_window_push_with_prefix(const char* title, int max_length, bool 
   window_stack_push(window, true);
 }
 
+void auth_entry_window_push_with_prefix(const char* title, int max_length, bool show_plus_prefix, AuthEntryCallback callback, AuthEntryCancelCallback cancel_callback) {
+  auth_entry_window_push_with_value(title, max_length, show_plus_prefix, NULL, callback, cancel_callback);
+}
+
 void auth_entry_window_push(const char* title, int max_length, AuthEntryCallback callback, AuthEntryCancelCallback cancel_callback) {
-  auth_entry_window_push_with_prefix(title, max_length, true, callback, cancel_callback);
+  auth_entry_window_push_with_value(title, max_length, true, NULL, callback, cancel_callback);
 }
 
 static void prv_window_load(Window* window) {

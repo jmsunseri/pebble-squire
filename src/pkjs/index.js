@@ -75,6 +75,7 @@ function probeWebSocket(label, url, protocols) {
 
 function runWebSocketProbes() {
     if (!WS_PROBE_ENABLED) return;
+    console.log('[wsprobe] starting probes');
     console.log('[wsprobe] WebSocket=' + (typeof WebSocket));
     probeWebSocket('telegram-venus', 'wss://venus.web.telegram.org:443/apiws', 'binary');
     probeWebSocket('telegram-venus-noproto', 'wss://venus.web.telegram.org:443/apiws');
@@ -89,7 +90,6 @@ function main() {
     sendTelegramStatus();
     history.fetchAndSendHistory();
     Pebble.addEventListener('appmessage', handleAppMessage);
-    runWebSocketProbes();
 }
 
 // Identifies the current auth request so a superseded request's late result
@@ -303,6 +303,7 @@ Pebble.addEventListener("ready",
         // given how many things bizarrely don't work.
         doCobbleWarning();
         console.log("Squire " + package_json['version']);
+        runWebSocketProbes();
 
         main();
     }

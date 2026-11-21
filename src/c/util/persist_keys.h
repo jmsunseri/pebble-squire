@@ -20,7 +20,7 @@
 // These keys are stored centrally so we can avoid accidental collisions.
 // Remember: these numbers can *never* be changed.
 
-// next key: 14
+// next key: 16
 
 // Store whether we have successfully requested location consent.
 #define PERSIST_KEY_LOCATION_ENABLED 6
@@ -37,5 +37,9 @@
 
 // Store whether Telegram is connected
 #define PERSIST_KEY_TELEGRAM_CONNECTED 14
+
+// The last confirmed Telegram phone number (digits only), so retries don't
+// require entering it again.
+#define PERSIST_KEY_AUTH_PHONE 15
 
 #endif //APP_PERSIST_KEYS_H

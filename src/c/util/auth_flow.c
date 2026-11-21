@@ -19,6 +19,7 @@
 #include "logging.h"
 #include "memory/malloc.h"
 #include "memory/sdk.h"
+#include "persist_keys.h"
 #include "result_window.h"
 
 #include <pebble.h>
@@ -66,6 +67,13 @@ static void prv_cancel(void) {
 
 static void prv_phone_entered(const char* value) {
   if (!value || strlen(value) == 0) return;
+
+  // Keep the confirmed number so a retry doesn't require typing it again.
+  status_t save_status = persist_write_string(PERSIST_KEY_AUTH_PHONE, value);
+  if (save_status < 0) {
+    SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to save auth phone number: %d", save_status);
+  }
+
   char normalized[20];
   snprintf(normalized, sizeof(normalized), "+%s", value);
 
@@ -130,7 +138,16 @@ void auth_flow_start(AuthFlowCompleteCallback callback) {
   s_complete_callback = callback;
   s_waiting_for_code = false;
   s_agent_username[0] = '\0';
-  auth_entry_window_push("Phone Number", 15, prv_phone_entered, prv_cancel);
+
+  char saved_phone[20];
+  saved_phone[0] = '\0';
+  int saved_length = persist_read_string(PERSIST_KEY_AUTH_PHONE, saved_phone, sizeof(saved_phone));
+  if (saved_length <= 0) {
+    saved_phone[0] = '\0';
+  }
+  auth_entry_window_push_with_value("Phone Number", 15, true,
+                                    saved_phone[0] ? saved_phone : NULL,
+                                    prv_phone_entered, prv_cancel);
 }
 
 void auth_flow_handle_message(uint32_t key, const char* value) {
