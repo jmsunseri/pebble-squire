@@ -133,6 +133,16 @@ function installWebSocketWrapper() {
     Wrapped.CLOSED = 3;
     Wrapped.__squireWrapped = true;
 
+    // Core Devices dispatches native WebSocket callbacks through the global
+    // constructor's _instances registry. Replacing the global without
+    // forwarding that map makes every socket event disappear.
+    if (Orig._instances) {
+        Wrapped._instances = Orig._instances;
+    }
+    if (Orig._defaultBinaryType !== undefined) {
+        Wrapped._defaultBinaryType = Orig._defaultBinaryType;
+    }
+
     G.WebSocket = Wrapped;
     if (G.window) G.window.WebSocket = Wrapped;
 }
