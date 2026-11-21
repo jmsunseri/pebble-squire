@@ -1,0 +1,15 @@
+# Squire v0.2
+
+## What's new
+
+This release makes Telegram sign-in reliable and easier to recover from.
+
+### Signing in
+
+- Your phone number is remembered once you confirm it, so retrying sign-in does not mean typing it again.
+- The "Connecting" and "Verifying" screens now clear themselves when sign-in finishes, fails, or is interrupted by a notification.
+
+### Under the hood
+
+- Telegram now uses the maintained teleproto client instead of the deprecated GramJS.
+- Fixed WebSocket connections through the Pebble phone app.

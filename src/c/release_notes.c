@@ -34,6 +34,7 @@ static void prv_load(Window *window);
 static void prv_unload(Window *window);
 // static void prv_click_config_provider(void *context);
 static char* prv_create_release_notes();
+static uint32_t prv_changelog_resource_id();
 
 void prv_release_notes_push() {
   Window *window = bwindow_create();
@@ -57,12 +58,29 @@ void release_notes_maybe_push() {
 }
 
 static char* prv_create_release_notes() {
-  ResHandle handle = resource_get_handle(RESOURCE_ID_CHANGELOG_0_1);
+  ResHandle handle = resource_get_handle(prv_changelog_resource_id());
   size_t size = resource_size(handle) + 1;
   char* text = bmalloc(size);
   text[size - 1] = '\0';
   resource_load(handle, (uint8_t*)text, size);
   return text;
+}
+
+static uint32_t prv_changelog_resource_id() {
+  VersionInfo version = version_get_current();
+  if (version.major == 0) {
+    switch (version.minor) {
+      case 2:
+        return RESOURCE_ID_CHANGELOG_0_2;
+      case 1:
+        return RESOURCE_ID_CHANGELOG_0_1;
+      default:
+        break;
+    }
+  }
+  SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "No changelog for v%d.%d, falling back to v0.1 notes",
+             version.major, version.minor);
+  return RESOURCE_ID_CHANGELOG_0_1;
 }
 
 static void prv_load(Window *window) {

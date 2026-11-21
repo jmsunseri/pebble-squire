@@ -1,7 +1,7 @@
 {
   "name": "Squire",
   "author": "Justin Sunseri",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "keywords": [
     "pebble-app"
   ],
@@ -171,6 +171,11 @@
         {
           "file": "text_changelog_0.1.txt",
           "name": "CHANGELOG_0_1",
+          "type": "raw"
+        },
+        {
+          "file": "text_changelog_0.2.txt",
+          "name": "CHANGELOG_0_2",
           "type": "raw"
         }
       ]
