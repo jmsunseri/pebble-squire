@@ -16,16 +16,24 @@
 
 #include "result_window.h"
 #include "vector_layer.h"
+#include "thinking_layer.h"
 #include "style.h"
 #include "../util/memory/malloc.h"
 #include <pebble.h>
 
 #include "memory/sdk.h"
 
+typedef enum {
+  ResultWindowLayoutTop,
+  ResultWindowLayoutLoading,
+  ResultWindowLayoutCentered,
+} ResultWindowLayout;
+
 typedef struct {
   StatusBarLayer *status_bar;
   TextLayer* title_layer;
   TextLayer* text_layer;
+  ThinkingLayer* thinking_layer;
   VectorLayer* image_layer;
 #ifdef PBL_COLOR
   GColor background_color;
@@ -36,6 +44,7 @@ typedef struct {
   GDrawCommandImage* image;
   AppTimer* timer;
   bool persistent;
+  ResultWindowLayout layout;
   uint32_t timeout_ms;
   ResultWindowUnloadCallback unload_callback;
 } ResultWindowData;
@@ -45,7 +54,7 @@ static void prv_window_unload(Window* window);
 static void prv_window_appear(Window* window);
 static void prv_timer_expired(void* context);
 
-static Window* prv_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color, bool persistent, uint32_t timeout_ms) {
+static Window* prv_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color, bool persistent, uint32_t timeout_ms, ResultWindowLayout layout) {
   Window* window = bwindow_create();
   ResultWindowData* data = bmalloc(sizeof(ResultWindowData));
   memset(data, 0, sizeof(ResultWindowData));
@@ -57,10 +66,13 @@ static Window* prv_push(const char* title, const char* text, GDrawCommandImage *
   data->text_color = text_color;
 #endif
   data->image = image;
+  data->layout = layout;
   data->title_text = bmalloc(strlen(title) + 1);
   strncpy(data->title_text, title, strlen(title) + 1);
-  data->text_text = bmalloc(strlen(text) + 1);
-  strncpy(data->text_text, text, strlen(text) + 1);
+  if (text) {
+    data->text_text = bmalloc(strlen(text) + 1);
+    strncpy(data->text_text, text, strlen(text) + 1);
+  }
   data->persistent = persistent;
   data->timeout_ms = timeout_ms;
   window_set_user_data(window, data);
@@ -74,15 +86,27 @@ static Window* prv_push(const char* title, const char* text, GDrawCommandImage *
 }
 
 Window* result_window_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color) {
-  return prv_push(title, text, image, background_color, false, 4000);
+  return prv_push(title, text, image, background_color, false, 4000, ResultWindowLayoutTop);
 }
 
 Window* result_window_push_with_timeout(const char* title, const char* text, GDrawCommandImage *image, GColor background_color, uint32_t timeout_ms) {
-  return prv_push(title, text, image, background_color, false, timeout_ms);
+  return prv_push(title, text, image, background_color, false, timeout_ms, ResultWindowLayoutTop);
 }
 
 Window* result_window_push_persistent(const char* title, const char* text, GDrawCommandImage *image, GColor background_color) {
-  return prv_push(title, text, image, background_color, true, 0);
+  return prv_push(title, text, image, background_color, true, 0, ResultWindowLayoutTop);
+}
+
+Window* result_window_push_loading(const char* title, GColor background_color, uint32_t timeout_ms) {
+  return prv_push(title, NULL, NULL, background_color, false, timeout_ms, ResultWindowLayoutLoading);
+}
+
+Window* result_window_push_centered(const char* title, const char* text, GColor background_color, uint32_t timeout_ms) {
+  return prv_push(title, text, NULL, background_color, false, timeout_ms, ResultWindowLayoutCentered);
+}
+
+Window* result_window_push_centered_persistent(const char* title, const char* text, GColor background_color) {
+  return prv_push(title, text, NULL, background_color, true, 0, ResultWindowLayoutCentered);
 }
 
 void result_window_set_unload_callback(Window* window, ResultWindowUnloadCallback callback) {
@@ -93,10 +117,87 @@ void result_window_set_unload_callback(Window* window, ResultWindowUnloadCallbac
   }
 }
 
+static void prv_load_loading(ResultWindowData* data, Layer* root_layer, GRect bounds) {
+  data->title_layer = btext_layer_create(GRect(10, 0, bounds.size.w - 20, 200));
+  text_layer_set_background_color(data->title_layer, GColorClear);
+#ifdef PBL_COLOR
+  text_layer_set_text_color(data->title_layer, data->text_color);
+#else
+  text_layer_set_text_color(data->title_layer, GColorBlack);
+#endif
+  text_layer_set_font(data->title_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_text(data->title_layer, data->title_text);
+  text_layer_set_text_alignment(data->title_layer, GTextAlignmentCenter);
+  text_layer_set_overflow_mode(data->title_layer, GTextOverflowModeWordWrap);
+
+  GSize title_size = text_layer_get_content_size(data->title_layer);
+  const int16_t gap = 8;
+  int16_t title_y = (bounds.size.h - title_size.h) / 2;
+
+  layer_set_frame(text_layer_get_layer(data->title_layer), GRect(10, title_y, bounds.size.w - 20, title_size.h + 4));
+  layer_add_child(root_layer, text_layer_get_layer(data->title_layer));
+
+  data->thinking_layer = thinking_layer_create(GRect((bounds.size.w - THINKING_LAYER_WIDTH) / 2,
+                                                     title_y + title_size.h + gap,
+                                                     THINKING_LAYER_WIDTH, THINKING_LAYER_HEIGHT));
+  layer_add_child(root_layer, data->thinking_layer);
+}
+
+static void prv_load_centered(ResultWindowData* data, Layer* root_layer, GRect bounds) {
+  data->title_layer = btext_layer_create(GRect(10, 0, bounds.size.w - 20, 200));
+  text_layer_set_background_color(data->title_layer, GColorClear);
+#ifdef PBL_COLOR
+  text_layer_set_text_color(data->title_layer, data->text_color);
+#else
+  text_layer_set_text_color(data->title_layer, GColorBlack);
+#endif
+  text_layer_set_font(data->title_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_text(data->title_layer, data->title_text);
+  text_layer_set_text_alignment(data->title_layer, GTextAlignmentCenter);
+  text_layer_set_overflow_mode(data->title_layer, GTextOverflowModeWordWrap);
+
+  data->text_layer = btext_layer_create(GRect(10, 0, bounds.size.w - 20, 1000));
+  text_layer_set_background_color(data->text_layer, GColorClear);
+#ifdef PBL_COLOR
+  text_layer_set_text_color(data->text_layer, data->text_color);
+#else
+  text_layer_set_text_color(data->text_layer, GColorBlack);
+#endif
+  text_layer_set_text_alignment(data->text_layer, GTextAlignmentCenter);
+  text_layer_set_font(data->text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+  text_layer_set_text(data->text_layer, data->text_text);
+  text_layer_set_overflow_mode(data->text_layer, GTextOverflowModeWordWrap);
+
+  GSize title_size = text_layer_get_content_size(data->title_layer);
+  GSize text_size = text_layer_get_content_size(data->text_layer);
+  const int16_t gap = 8;
+  int16_t group_height = title_size.h + gap + text_size.h;
+  int16_t group_y = (bounds.size.h - group_height) / 2;
+  if (group_y < 5) {
+    group_y = 5;
+  }
+
+  layer_set_frame(text_layer_get_layer(data->title_layer),
+                  GRect(10, group_y, bounds.size.w - 20, title_size.h + 4));
+  layer_add_child(root_layer, text_layer_get_layer(data->title_layer));
+  layer_set_frame(text_layer_get_layer(data->text_layer),
+                  GRect(10, group_y + title_size.h + gap, bounds.size.w - 20, text_size.h + 4));
+  layer_add_child(root_layer, text_layer_get_layer(data->text_layer));
+}
+
 static void prv_window_load(Window* window) {
   ResultWindowData* data = window_get_user_data(window);
   Layer* root_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(root_layer);
+
+  if (data->layout == ResultWindowLayoutLoading) {
+    prv_load_loading(data, root_layer, bounds);
+    return;
+  }
+  if (data->layout == ResultWindowLayoutCentered) {
+    prv_load_centered(data, root_layer, bounds);
+    return;
+  }
 
   data->status_bar = bstatus_bar_layer_create();
   squire_status_bar_result_pane_config(data->status_bar);
@@ -150,15 +251,24 @@ static void prv_window_unload(Window* window) {
   if (unload_callback) {
     unload_callback(window);
   }
-  text_layer_destroy(data->title_layer);
-  text_layer_destroy(data->text_layer);
+  if (data->title_layer) {
+    text_layer_destroy(data->title_layer);
+  }
+  if (data->text_layer) {
+    text_layer_destroy(data->text_layer);
+  }
+  if (data->thinking_layer) {
+    thinking_layer_destroy(data->thinking_layer);
+  }
   if (data->image_layer) {
     vector_layer_destroy(data->image_layer);
   }
   if (data->image) {
     gdraw_command_image_destroy(data->image);
   }
-  status_bar_layer_destroy(data->status_bar);
+  if (data->status_bar) {
+    status_bar_layer_destroy(data->status_bar);
+  }
   if (data->timer) {
     app_timer_cancel(data->timer);
     data->timer = NULL;

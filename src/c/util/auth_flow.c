@@ -56,10 +56,9 @@ static void prv_dismiss_waiting(void) {
   }
 }
 
-static void prv_show_waiting(const char* title, const char* text) {
+static void prv_show_waiting(const char* title) {
   prv_dismiss_waiting();
-  s_waiting_window = result_window_push_with_timeout(title, text, NULL, GColorWhite,
-                                                     AUTH_RESPONSE_TIMEOUT_MS);
+  s_waiting_window = result_window_push_loading(title, GColorWhite, AUTH_RESPONSE_TIMEOUT_MS);
   result_window_set_unload_callback(s_waiting_window, prv_waiting_window_unloaded);
 }
 
@@ -71,9 +70,9 @@ static void prv_response_timed_out(void* context) {
   AuthFlowCompleteCallback cb = s_complete_callback;
   s_complete_callback = NULL;
   prv_dismiss_waiting();
-  result_window_push_persistent("No Response",
-                                "The phone did not answer. Make sure the Pebble app is open and connected, then try again.",
-                                NULL, GColorWhite);
+  result_window_push_centered_persistent("No Response",
+                                         "The phone did not answer. Make sure the Pebble app is open and connected, then try again.",
+                                         GColorWhite);
   cb(false, NULL);
 }
 
@@ -106,21 +105,21 @@ static void prv_phone_entered(const char* value) {
   AppMessageResult result = app_message_outbox_begin(&iter);
   if (result != APP_MSG_OK) {
     SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to prepare auth outbox: %d", result);
-    result_window_push_persistent("Error", "Could not send to phone. Try again.", NULL, GColorWhite);
+    result_window_push_centered_persistent("Error", "Could not send to phone. Try again.", GColorWhite);
     return;
   }
   dict_write_cstring(iter, MESSAGE_KEY_TELEGRAM_START_AUTH, normalized);
   result = app_message_outbox_send();
   if (result != APP_MSG_OK) {
     SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to send auth message: %d", result);
-    result_window_push_persistent("Error", "Could not send to phone. Try again.", NULL, GColorWhite);
+    result_window_push_centered_persistent("Error", "Could not send to phone. Try again.", GColorWhite);
     return;
   }
 
   s_waiting_for_code = true;
   // Give the user feedback while the phone contacts Telegram. The code entry
   // screen will be pushed when TELEGRAM_CODE_SENT arrives.
-  prv_show_waiting("Connecting", "Waiting for Telegram to send your code...");
+  prv_show_waiting("Connecting");
   prv_arm_response_timer();
 }
 
@@ -131,18 +130,18 @@ static void prv_code_entered(const char* value) {
   AppMessageResult result = app_message_outbox_begin(&iter);
   if (result != APP_MSG_OK) {
     SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to prepare auth outbox: %d", result);
-    result_window_push_persistent("Error", "Could not send to phone. Try again.", NULL, GColorWhite);
+    result_window_push_centered_persistent("Error", "Could not send to phone. Try again.", GColorWhite);
     return;
   }
   dict_write_cstring(iter, MESSAGE_KEY_TELEGRAM_PROVIDE_CODE, value);
   result = app_message_outbox_send();
   if (result != APP_MSG_OK) {
     SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Failed to send auth message: %d", result);
-    result_window_push_persistent("Error", "Could not send to phone. Try again.", NULL, GColorWhite);
+    result_window_push_centered_persistent("Error", "Could not send to phone. Try again.", GColorWhite);
     return;
   }
 
-  prv_show_waiting("Verifying", "Checking your code with Telegram...");
+  prv_show_waiting("Verifying");
   prv_arm_response_timer();
 }
 
@@ -150,9 +149,9 @@ void auth_flow_start(AuthFlowCompleteCallback callback) {
   if (s_complete_callback && s_waiting_for_code) {
     // Don't silently throw away a request that is already in flight. The
     // response timer will clear it if the phone never answers.
-    result_window_push("Still Waiting",
-                       "Telegram has not responded yet. Wait for the code or try again shortly.",
-                       NULL, GColorWhite);
+    result_window_push_centered("Still Waiting",
+                                "Telegram has not responded yet. Wait for the code or try again shortly.",
+                                GColorWhite, 4000);
     return;
   }
   prv_cancel_response_timer();
@@ -202,7 +201,7 @@ void auth_flow_handle_message(uint32_t key, const char* value) {
     const char* message = (value && value[0])
         ? value
         : "Could not sign in to Telegram. Please try again.";
-    result_window_push_persistent("Auth Failed", message, NULL, GColorWhite);
+    result_window_push_centered_persistent("Auth Failed", message, GColorWhite);
     if (s_complete_callback) {
       AuthFlowCompleteCallback cb = s_complete_callback;
       s_complete_callback = NULL;

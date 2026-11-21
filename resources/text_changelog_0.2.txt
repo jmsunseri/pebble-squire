@@ -2,30 +2,17 @@
 
 ## What's new
 
-This release makes Telegram sign-in reliable and easier to recover from.
+This release makes it easier to get back into a conversation and follow it on a small screen.
 
-### Signing in
+## Conversations
 
-- Your phone number is remembered once you confirm it, so retrying sign-in does not mean typing it again.
-- The "Connecting" and "Verifying" screens now clear themselves when sign-in finishes, fails, or is interrupted by a notification.
+- Up opens your last conversation with recent messages, and Back from a quick-launched conversation returns home.
+- Ask Again in the Down menu lets you reuse a recent question.
+- Long answers stay open while the agent is working.
 
-### Getting around
+## Watch
 
-- Back from a quick-launched conversation now returns to the Squire home screen instead of closing the app.
-- Quick launch still starts listening immediately; after the inactivity timeout it returns home.
-- Up now opens your last conversation with the last four messages.
-- The Down menu now has Ask Again, which shows your recent questions. The canned prompts remain the fallback.
-- The Down menu also has What's New, so you can reread the current release notes at any time.
-- Release notes now use a status bar and round-friendly margins and alignment on round watches.
-- Ask Again identifies your questions by the marker the phone adds, so agent replies no longer fill the list.
-- Starting a question now continues the last thread and shows its last two messages, beginning with your question rather than a bot reply.
-- Every bot reply in a reloaded conversation is labeled "Squire" so messages stay visually separated.
-- Touch navigation is enabled on menus and What's New; the home and conversation screens ignore touch.
-- Agent "Self-improvement review:" messages and "Working" progress updates are filtered out and never shown on the watch.
-- History keeps up to eight recent messages; a new question shows the last two, and the Conversation view shows the last four.
-- A long answer no longer closes the conversation at the quick-launch timeout; it stays open while the agent is still working.
-
-### Under the hood
-
-- Telegram now uses the maintained teleproto client instead of the deprecated GramJS.
-- Fixed WebSocket connections through the Pebble phone app.
+- What's New is now in the Down menu.
+- Touch controls work on menus, What's New, and conversations; the home screen ignores touch.
+- Sign-in waiting screens are simpler: a bold status and the Squire thinking indicator.
+- Conversations and release notes are laid out for round displays.

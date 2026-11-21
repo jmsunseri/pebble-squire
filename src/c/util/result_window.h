@@ -24,6 +24,9 @@ typedef void (*ResultWindowUnloadCallback)(Window* window);
 Window* result_window_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color);
 Window* result_window_push_with_timeout(const char* title, const char* text, GDrawCommandImage *image, GColor background_color, uint32_t timeout_ms);
 Window* result_window_push_persistent(const char* title, const char* text, GDrawCommandImage *image, GColor background_color);
+Window* result_window_push_loading(const char* title, GColor background_color, uint32_t timeout_ms);
+Window* result_window_push_centered(const char* title, const char* text, GColor background_color, uint32_t timeout_ms);
+Window* result_window_push_centered_persistent(const char* title, const char* text, GColor background_color);
 void result_window_set_unload_callback(Window* window, ResultWindowUnloadCallback callback);
 
 #endif //RESULT_WINDOW_H
