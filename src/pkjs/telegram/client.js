@@ -54,6 +54,9 @@ function initClient() {
                 var stringSession = new StringSession(storedSession || '');
                 client = new TelegramClient(stringSession, apiId || 0, apiHash, {
                     connectionRetries: 5,
+                    // GramJS ignores the session's port and uses 80 unless
+                    // useWSS is set. Telegram's TCP endpoints are on 443.
+                    useWSS: true,
                     deviceModel: 'Squire',
                     systemVersion: '1.0',
                     appVersion: '1.0',

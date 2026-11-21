@@ -125,6 +125,9 @@ function createAuthClient() {
     var apiHash = process.env.TELEGRAM_APP_HASH || '';
     var newClient = new TelegramClient(new StringSessionCls(''), apiId, apiHash, {
         connectionRetries: 5,
+        // GramJS ignores the session's port and uses 80 unless useWSS is set.
+        // Telegram's TCP endpoints are on 443; port 80 often hangs.
+        useWSS: true,
         deviceModel: 'Squire',
         systemVersion: '1.0',
         appVersion: '1.0'
@@ -220,6 +223,7 @@ function provideCode(code) {
         var StringSessionCls = StringSession;
         var signInClient = new TelegramClient(new StringSessionCls(authSession || ''), apiId, apiHash, {
             connectionRetries: 5,
+            useWSS: true,
             deviceModel: 'Squire',
             systemVersion: '1.0',
             appVersion: '1.0'
@@ -296,6 +300,7 @@ function providePassword(password) {
         var StringSessionCls = StringSession;
         var pwClient = new TelegramClient(new StringSessionCls(authSession), apiId, apiHash, {
             connectionRetries: 5,
+            useWSS: true,
             deviceModel: 'Squire',
             systemVersion: '1.0',
             appVersion: '1.0'
