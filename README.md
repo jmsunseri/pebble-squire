@@ -91,7 +91,7 @@ package.json           # Pebble app configuration
 
 ### Key Files
 
-- `src/pkjs/telegram/` - GramJS-based Telegram client
+- `src/pkjs/telegram/` - teleproto-based Telegram client
 - `src/pkjs/session.js` - Session management and backend communication
 - `src/pkjs/config.json` - Settings UI configuration
 

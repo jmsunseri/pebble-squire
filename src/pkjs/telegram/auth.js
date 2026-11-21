@@ -37,7 +37,7 @@ var AUTH_STATE_KEY = 'telegram_auth_waiting_for_code';
 // double-tap from triggering a second SendCode, but lets a stuck request be
 // retried instead of locking the user out until the JS context restarts.
 var AUTH_SUPERSEDE_MS = 15000;
-// Upper bound for one GramJS auth operation. Must stay below the watch's
+// Upper bound for one teleproto auth operation. Must stay below the watch's
 // response timer so the watch gets an explicit failure rather than silence.
 var AUTH_OPERATION_TIMEOUT_MS = 40000;
 
@@ -111,10 +111,11 @@ function withAuthLock(fn) {
     };
 }
 
-var AUTH_DC = {
-    id: 1,
-    host: 'pluto.web.telegram.org'
-};
+function createTransport() {
+    return (typeof WebSocketTransport !== 'undefined')
+        ? new WebSocketTransport()
+        : undefined;
+}
 
 // TELEGRAM_APP_ID / TELEGRAM_APP_HASH are inlined at build time.
 // Release builds get them from the CloudPebble build environment;
@@ -123,19 +124,15 @@ function createAuthClient() {
     var StringSessionCls = StringSession;
     var apiId = parseInt(process.env.TELEGRAM_APP_ID, 10);
     var apiHash = process.env.TELEGRAM_APP_HASH || '';
-    var newClient = new TelegramClient(new StringSessionCls(''), apiId, apiHash, {
+    // Let teleproto pick the DC and migrate to the account's home DC if
+    // Telegram asks. Forcing a DC here made the initial connection fragile.
+    return new TelegramClient(new StringSessionCls(''), apiId, apiHash, {
         connectionRetries: 5,
-        // GramJS ignores the session's port and uses 80 unless useWSS is set.
-        // Telegram's TCP endpoints are on 443; port 80 often hangs.
-        useWSS: true,
+        transport: createTransport(),
         deviceModel: 'Squire',
         systemVersion: '1.0',
         appVersion: '1.0'
     });
-    if (newClient.session && typeof newClient.session.setDC === 'function') {
-        newClient.session.setDC(AUTH_DC.id, AUTH_DC.host, 443);
-    }
-    return newClient;
 }
 
 function startAuth(phoneNumber) {
@@ -223,7 +220,7 @@ function provideCode(code) {
         var StringSessionCls = StringSession;
         var signInClient = new TelegramClient(new StringSessionCls(authSession || ''), apiId, apiHash, {
             connectionRetries: 5,
-            useWSS: true,
+            transport: createTransport(),
             deviceModel: 'Squire',
             systemVersion: '1.0',
             appVersion: '1.0'
@@ -300,7 +297,7 @@ function providePassword(password) {
         var StringSessionCls = StringSession;
         var pwClient = new TelegramClient(new StringSessionCls(authSession), apiId, apiHash, {
             connectionRetries: 5,
-            useWSS: true,
+            transport: createTransport(),
             deviceModel: 'Squire',
             systemVersion: '1.0',
             appVersion: '1.0'

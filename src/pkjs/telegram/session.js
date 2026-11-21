@@ -24,7 +24,7 @@ var BOT_USERNAME_KEY = 'agent_telegram_username';
 
 /**
  * Save Telegram session to localStorage.
- * @param {string} sessionData - The session string from GramJS
+ * @param {string} sessionData - The session string from teleproto
  */
 function saveSession(sessionData) {
     try {

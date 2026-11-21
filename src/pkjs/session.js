@@ -115,7 +115,7 @@ Session.prototype.sendViaGramJS = function(message, botUsername, resolve, reject
         console.log('[session] Message sent to', botUsername, 'id:', result ? result.id : 'unknown');
         self.listenForResponse(telegram.getClient(), cleanUsername, resolve, reject);
     }).catch(function(error) {
-        console.error('[session] GramJS error:', error);
+        console.error('[session] Telegram error:', error);
         reject(error);
     });
 };
@@ -128,7 +128,7 @@ Session.prototype.listenForResponse = function(client, botUsername, resolve, rej
     var botUserId = null;
 
     // Keep references to the handlers and event builders we register so we
-    // can remove them when this conversation ends. GramJS's removeEventHandler
+    // can remove them when this conversation ends. teleproto's removeEventHandler
     // matches by reference equality on both the callback and the builder, so
     // these must be the exact instances passed to addEventHandler. Without
     // removal, every new Session would pile another handler onto the shared

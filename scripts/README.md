@@ -1,16 +1,9 @@
 # Telegram Bundle Build Scripts
 
-This directory contains scripts for building the Telegram/GramJS bundle that's used by Squire.
-
-## Files
-
-- `package.json` - Dependencies needed to build the Telegram bundle
-- `build-gramjs.js` - Build script using esbuild + Babel
-- `babel.config.json` - Babel configuration for ES5 transpilation
+This directory builds the [teleproto](https://github.com/sanyok12345/teleproto)
+bundle used by PebbleKit JS.
 
 ## Rebuilding the Bundle
-
-If you need to update the Telegram bundle (e.g., to upgrade GramJS):
 
 ```bash
 cd scripts
@@ -18,28 +11,41 @@ npm install
 npm run build:telegram
 ```
 
-This will regenerate `src/pkjs/lib/telegram-bundle.js`.
+This regenerates `src/pkjs/lib/telegram-bundle.js`.
 
 ## How It Works
 
-The build process has two steps:
+`build-telegram-bundle.js` uses esbuild to bundle `telegram-entry.js` with:
 
-1. **esbuild** - Bundles the `telegram` npm package with browser polyfills
-2. **Babel** - Transpiles to ES5 for compatibility with older JavaScript runtimes
+- `platform: "browser"`, so teleproto resolves its browser implementations
+  through the `#platform/*` conditional imports in its package.json
+- `format: "cjs"`, because `src/pkjs/lib/bundle_loader.js` loads the bundle
+  with `require()`
+- `target: "es2017"` and minification
 
-The bundle creates global variables:
+The output exports:
 
-- `Telegram` - The main GramJS object
-- `TelegramClient` - The client class
-- `StringSession` - Session management
-- `NewMessage` - Event handler for messages
+- `TelegramClient`
+- `StringSession`
+- `Api`
+- `NewMessage`
+- `Raw`
+- `WebSocketTransport`
 
-These globals are used by `src/pkjs/session.js` and `src/pkjs/custom_config.js` to communicate with Telegram.
+`bundle_loader.js` installs these as globals for `src/pkjs/telegram/*` and
+`src/pkjs/session.js`.
 
-## Why ES5?
+## Why Browser?
 
-The Pebble app's JavaScript runtime (PebbleKit JS) runs on mobile devices and may have limited ES6+ support. Transpiling to ES5 ensures maximum compatibility.
+The browser build uses `WebSocketTransport` (Telegram's `/apiws` endpoint)
+instead of raw TCP, which PebbleKit JS cannot open. It also avoids Node-only
+modules such as `fs`, `net` and `node-localstorage`.
 
-## Dependencies
+## Rebuilding from a Local Checkout
 
-All dependencies in `package.json` are only needed for building the bundle. They are not required for running the Pebble app itself.
+If `npm install` is not available, extract the `teleproto` and `cifrante`
+tarballs into `scripts/node_modules`, then run:
+
+```bash
+node scripts/build-telegram-bundle.js
+```

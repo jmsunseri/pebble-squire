@@ -89,6 +89,9 @@ function describeAuthError(err) {
     if (msg.indexOf('did not respond in time') !== -1 || msg.indexOf('timed out') !== -1) {
         return 'Telegram did not respond. Check the phone connection and try again.';
     }
+    if (msg.indexOf('WebSocket') !== -1 || msg.indexOf('websocket') !== -1) {
+        return 'Could not reach Telegram over the phone\'s WebSocket connection. Check the phone connection and try again.';
+    }
     if (msg.indexOf('session expired') !== -1 || msg.indexOf('re-authenticate') !== -1) {
         return 'Your Telegram session expired. Sign in again.';
     }

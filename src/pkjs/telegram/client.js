@@ -15,7 +15,7 @@
  */
 
 /**
- * Telegram client using GramJS for direct MTProto communication.
+ * Telegram client using teleproto for direct MTProto communication.
  * This eliminates the need for a backend server - all Telegram communication
  * happens directly from the phone app.
  */
@@ -44,7 +44,7 @@ function initClient() {
             console.log('[client] Stored session: ' + (storedSession ? 'present (length: ' + storedSession.length + ')' : 'none'));
 
             if (typeof TelegramClient !== 'undefined') {
-                console.log('[client] GramJS available, creating TelegramClient...');
+                console.log('[client] Teleproto available, creating TelegramClient...');
                 // Inlined at build time by CloudPebble; see README.
                 var apiId = parseInt(process.env.TELEGRAM_APP_ID, 10);
                 var apiHash = process.env.TELEGRAM_APP_HASH || '';
@@ -54,9 +54,9 @@ function initClient() {
                 var stringSession = new StringSession(storedSession || '');
                 client = new TelegramClient(stringSession, apiId || 0, apiHash, {
                     connectionRetries: 5,
-                    // GramJS ignores the session's port and uses 80 unless
-                    // useWSS is set. Telegram's TCP endpoints are on 443.
-                    useWSS: true,
+                    transport: (typeof WebSocketTransport !== 'undefined')
+                        ? new WebSocketTransport()
+                        : undefined,
                     deviceModel: 'Squire',
                     systemVersion: '1.0',
                     appVersion: '1.0',
@@ -123,6 +123,16 @@ function initClient() {
                     var errorMsg = (err.message || err || '').toString();
                     console.error('[client] Failed to connect to Telegram: ' + errorMsg);
                     console.error('[client] Error stack: ' + (err.stack || 'no stack'));
+                    if (errorMsg.indexOf('Not a valid string') !== -1) {
+                        console.log('[client] Stored session format is invalid, clearing for re-auth');
+                        session.clearSession();
+
+                        isConnected = false;
+                        client = null;
+                        try { Pebble.sendAppMessage({TELEGRAM_CONNECTED: 0}); } catch(e) {}
+                        reject(new Error('Telegram session expired. Please re-authenticate.'));
+                        return;
+                    }
                     if (errorMsg.indexOf('AUTH_KEY_DUPLICATED') !== -1 || errorMsg.indexOf('AUTH_KEY_UNREGISTERED') !== -1) {
                         console.log('[client] Session key invalid, clearing session for re-auth');
                         session.clearSession();
@@ -144,13 +154,13 @@ function initClient() {
                     reject(err);
                 });
             } else {
-                console.log('[client] GramJS not loaded, checking for stored session...');
+                console.log('[client] Teleproto client not loaded, checking for stored session...');
                 if (storedSession) {
-                    console.log('[client] Using stored session (GramJS unavailable)');
+                    console.log('[client] Using stored session (teleproto unavailable)');
                     isConnected = true;
                     resolve(true);
                 } else {
-                    console.error('[client] No session available and GramJS not loaded');
+                    console.error('[client] No session available and teleproto not loaded');
                     reject(new Error('No Telegram session available'));
                 }
             }
@@ -216,7 +226,7 @@ function getClient() {
     return client;
 }
 
-// For GramJS compatibility, export these
+// Session string compatibility
 exports.StringSession = typeof StringSession !== 'undefined' ? StringSession : function(sessionStr) {
     this.sessionStr = sessionStr || '';
     this.save = function() {

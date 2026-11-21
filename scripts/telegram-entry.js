@@ -1,6 +1,5 @@
-// Minimal entry point for tree-shaking Telegram bundle
-// Only export what Squire actually uses
-
-export { TelegramClient, Api } from 'telegram';
-export { StringSession } from 'telegram/sessions';
-export { NewMessage } from 'telegram/events';
+// Minimal entry point for the teleproto bundle.
+// Only export what Squire actually uses.
+export { TelegramClient, Api, WebSocketTransport } from 'teleproto';
+export { StringSession } from 'teleproto/sessions';
+export { NewMessage, Raw } from 'teleproto/events';
