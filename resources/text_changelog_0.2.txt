@@ -16,7 +16,8 @@ This release makes Telegram sign-in reliable and easier to recover from.
 - Up now opens your last conversation with the last four messages.
 - The Down menu now has Ask Again, which shows your recent questions. The canned prompts remain the fallback.
 - Ask Again identifies your questions by the marker the phone adds, so agent replies no longer fill the list.
-- Starting a question now continues the last thread and shows its last two messages for context.
+- Starting a question now continues the last thread and shows its last two messages, beginning with your question rather than a bot reply.
+- Every bot reply in a reloaded conversation is labeled "Squire" so messages stay visually separated.
 - Agent "Self-improvement review:" messages and "Working —" progress updates are filtered out and never shown on the watch.
 - History keeps up to eight recent messages; a new question shows the last two, and the Conversation view shows the last four.
 - A long answer no longer closes the conversation at the quick-launch timeout; it stays open while the agent is still working.

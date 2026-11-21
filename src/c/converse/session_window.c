@@ -287,6 +287,17 @@ static void prv_window_appear(Window *window) {
     if (sw->history_limit > 0 && count > sw->history_limit) {
       start = count - sw->history_limit;
     }
+    if (sw->history_limit > 0 && start < count &&
+        history_get_entry(start)->type == HistoryEntryTypeResponse) {
+      // Don't start the view on a bot reply whose question falls outside the
+      // window. Move forward to the next question if there is one.
+      for (int i = start + 1; i < count; i++) {
+        if (history_get_entry(i)->type == HistoryEntryTypePrompt) {
+          start = i;
+          break;
+        }
+      }
+    }
     int added = 0;
     for (int i = start; i < count; i++) {
       const HistoryEntry* entry = history_get_entry(i);
@@ -302,8 +313,9 @@ static void prv_window_appear(Window *window) {
     GSize holder_size = scroll_layer_get_content_size(sw->scroll_layer);
     for (int i = 0; i < added; i++) {
       ConversationEntry* conv_entry = conversation_entry_at_index(conv, i);
-      bool is_last = (i == added - 1);
-      bool assistant_label = (conversation_entry_get_type(conv_entry) == EntryTypeResponse) && is_last;
+      // Label every bot reply, not just the latest, so turns stay separated
+      // when a conversation is reloaded from history.
+      bool assistant_label = (conversation_entry_get_type(conv_entry) == EntryTypeResponse);
       if (sw->segment_count == sw->segment_space) {
         SegmentLayer** new_block = bmalloc(sizeof(SegmentLayer*) * ++sw->segment_space);
         memcpy(new_block, sw->segment_layers, sizeof(SegmentLayer*) * sw->segment_count);
