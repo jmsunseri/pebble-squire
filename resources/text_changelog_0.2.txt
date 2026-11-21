@@ -14,5 +14,5 @@ This release makes it easier to get back into a conversation and follow it on a 
 
 - What's New is now in the Down menu.
 - Touch controls work on menus, What's New, and conversations; the home screen ignores touch.
-- Sign-in waiting screens are simpler: a bold status and the Squire thinking indicator.
+- Sign-in and disconnect waiting screens are simpler: a bold status and the Squire thinking indicator.
 - Conversations and release notes are laid out for round displays.

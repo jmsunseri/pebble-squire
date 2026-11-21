@@ -286,7 +286,7 @@ static void prv_menu_whats_new(ActionMenu *action_menu, const ActionMenuItem *ac
 static void prv_menu_disconnect(ActionMenu *action_menu, const ActionMenuItem *action, void *context) {
   RootWindow* rw = context;
   if (!settings_is_telegram_connected()) {
-    result_window_push("Not Connected", "Telegram is not currently connected.", NULL, GColorWhite);
+    result_window_push_centered_persistent("Not Connected", "Telegram is not currently connected.", GColorWhite);
     return;
   }
   ActionMenuLevel *confirm_level = baction_menu_level_create(2);
@@ -321,9 +321,9 @@ static void prv_disconnect_confirm_menu_closed(ActionMenu *action_menu, const Ac
     if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
       dict_write_int8(iter, MESSAGE_KEY_TELEGRAM_DISCONNECT, 1);
       app_message_outbox_send();
-      result_window_push("Disconnecting", "Signing out of Telegram...", NULL, GColorWhite);
+      result_window_push_loading("Disconnecting", GColorWhite, 4000);
     } else {
-      result_window_push("Error", "Could not reach phone. Try again.", NULL, GColorWhite);
+      result_window_push_centered_persistent("Error", "Could not reach phone. Try again.", GColorWhite);
     }
   }
 }
