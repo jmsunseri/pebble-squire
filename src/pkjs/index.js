@@ -30,61 +30,6 @@ var package_json = require('package.json');
 
 var clay = new Clay(clayConfig, customConfigFunction);
 
-// Temporary network diagnostic. Remove once the WebSocket failure is
-// understood. Each probe logs open/error/close/timeout to the phone log.
-var WS_PROBE_ENABLED = true;
-
-function probeWebSocket(label, url, protocols) {
-    if (typeof WebSocket === 'undefined') {
-        console.log('[wsprobe] ' + label + ': WebSocket is undefined');
-        return;
-    }
-    var settled = false;
-    var ws;
-    var timer = setTimeout(function() {
-        if (settled) return;
-        settled = true;
-        console.log('[wsprobe] ' + label + ' TIMEOUT ' + url);
-        try { ws.close(); } catch (e) {}
-    }, 12000);
-    try {
-        ws = protocols ? new WebSocket(url, protocols) : new WebSocket(url);
-    } catch (e) {
-        clearTimeout(timer);
-        console.log('[wsprobe] ' + label + ' CONSTRUCTOR ERROR: ' + (e.message || e));
-        return;
-    }
-    ws.onopen = function() {
-        clearTimeout(timer);
-        settled = true;
-        console.log('[wsprobe] ' + label + ' OPEN protocol=' + JSON.stringify(ws.protocol));
-        try { ws.close(); } catch (e) {}
-    };
-    ws.onerror = function() {
-        console.log('[wsprobe] ' + label + ' ERROR');
-    };
-    ws.onclose = function(e) {
-        clearTimeout(timer);
-        if (settled) return;
-        settled = true;
-        console.log('[wsprobe] ' + label + ' CLOSE code=' + e.code +
-                    ' reason=' + JSON.stringify(e.reason) +
-                    ' clean=' + e.wasClean);
-    };
-}
-
-function runWebSocketProbes() {
-    if (!WS_PROBE_ENABLED) return;
-    console.log('[wsprobe] starting probes');
-    console.log('[wsprobe] WebSocket=' + (typeof WebSocket));
-    probeWebSocket('telegram-venus', 'wss://venus.web.telegram.org:443/apiws', 'binary');
-    probeWebSocket('telegram-venus-noproto', 'wss://venus.web.telegram.org:443/apiws');
-    probeWebSocket('telegram-pluto', 'wss://pluto.web.telegram.org:443/apiws', 'binary');
-    probeWebSocket('telegram-web', 'wss://web.telegram.org/apiws', 'binary');
-    probeWebSocket('telegram-zws1', 'wss://zws1.web.telegram.org/apiws', 'binary');
-    probeWebSocket('postman-echo', 'wss://ws.postman-echo.com/raw');
-}
-
 function main() {
     location.update();
     sendTelegramStatus();
@@ -179,7 +124,6 @@ function handleTelegramDisconnect() {
 }
 
 function handleStartAuth(phone) {
-    runWebSocketProbes();
     ensureTelegramBundle();
     var seq = ++authRequestSeq;
     console.log('[index] Watch requested start_auth for: ' + phone);

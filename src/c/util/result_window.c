@@ -37,6 +37,7 @@ typedef struct {
   AppTimer* timer;
   bool persistent;
   uint32_t timeout_ms;
+  ResultWindowUnloadCallback unload_callback;
 } ResultWindowData;
 
 static void prv_window_load(Window* window);
@@ -44,7 +45,7 @@ static void prv_window_unload(Window* window);
 static void prv_window_appear(Window* window);
 static void prv_timer_expired(void* context);
 
-static void prv_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color, bool persistent, uint32_t timeout_ms) {
+static Window* prv_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color, bool persistent, uint32_t timeout_ms) {
   Window* window = bwindow_create();
   ResultWindowData* data = bmalloc(sizeof(ResultWindowData));
   memset(data, 0, sizeof(ResultWindowData));
@@ -69,18 +70,27 @@ static void prv_push(const char* title, const char* text, GDrawCommandImage *ima
     .appear = prv_window_appear,
   });
   window_stack_push(window, true);
+  return window;
 }
 
-void result_window_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color) {
-  prv_push(title, text, image, background_color, false, 4000);
+Window* result_window_push(const char* title, const char* text, GDrawCommandImage *image, GColor background_color) {
+  return prv_push(title, text, image, background_color, false, 4000);
 }
 
-void result_window_push_with_timeout(const char* title, const char* text, GDrawCommandImage *image, GColor background_color, uint32_t timeout_ms) {
-  prv_push(title, text, image, background_color, false, timeout_ms);
+Window* result_window_push_with_timeout(const char* title, const char* text, GDrawCommandImage *image, GColor background_color, uint32_t timeout_ms) {
+  return prv_push(title, text, image, background_color, false, timeout_ms);
 }
 
-void result_window_push_persistent(const char* title, const char* text, GDrawCommandImage *image, GColor background_color) {
-  prv_push(title, text, image, background_color, true, 0);
+Window* result_window_push_persistent(const char* title, const char* text, GDrawCommandImage *image, GColor background_color) {
+  return prv_push(title, text, image, background_color, true, 0);
+}
+
+void result_window_set_unload_callback(Window* window, ResultWindowUnloadCallback callback) {
+  if (!window) return;
+  ResultWindowData* data = window_get_user_data(window);
+  if (data) {
+    data->unload_callback = callback;
+  }
 }
 
 static void prv_window_load(Window* window) {
@@ -135,6 +145,11 @@ static void prv_window_load(Window* window) {
 
 static void prv_window_unload(Window* window) {
   ResultWindowData* data = window_get_user_data(window);
+  ResultWindowUnloadCallback unload_callback = data->unload_callback;
+  data->unload_callback = NULL;
+  if (unload_callback) {
+    unload_callback(window);
+  }
   text_layer_destroy(data->title_layer);
   text_layer_destroy(data->text_layer);
   if (data->image_layer) {

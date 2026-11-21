@@ -32,12 +32,35 @@ static AuthFlowCompleteCallback s_complete_callback = NULL;
 static bool s_waiting_for_code = false;
 static char s_agent_username[64];
 static AppTimer* s_response_timer = NULL;
+static Window* s_waiting_window = NULL;
 
 static void prv_cancel_response_timer(void) {
   if (s_response_timer) {
     app_timer_cancel(s_response_timer);
     s_response_timer = NULL;
   }
+}
+
+static void prv_waiting_window_unloaded(Window* window) {
+  if (s_waiting_window == window) {
+    s_waiting_window = NULL;
+  }
+}
+
+static void prv_dismiss_waiting(void) {
+  if (!s_waiting_window) return;
+  Window* window = s_waiting_window;
+  s_waiting_window = NULL;
+  if (window_stack_contains_window(window)) {
+    window_stack_remove(window, false);
+  }
+}
+
+static void prv_show_waiting(const char* title, const char* text) {
+  prv_dismiss_waiting();
+  s_waiting_window = result_window_push_with_timeout(title, text, NULL, GColorWhite,
+                                                     AUTH_RESPONSE_TIMEOUT_MS);
+  result_window_set_unload_callback(s_waiting_window, prv_waiting_window_unloaded);
 }
 
 static void prv_response_timed_out(void* context) {
@@ -47,6 +70,7 @@ static void prv_response_timed_out(void* context) {
   s_waiting_for_code = false;
   AuthFlowCompleteCallback cb = s_complete_callback;
   s_complete_callback = NULL;
+  prv_dismiss_waiting();
   result_window_push_persistent("No Response",
                                 "The phone did not answer. Make sure the Pebble app is open and connected, then try again.",
                                 NULL, GColorWhite);
@@ -60,6 +84,7 @@ static void prv_arm_response_timer(void) {
 
 static void prv_cancel(void) {
   prv_cancel_response_timer();
+  prv_dismiss_waiting();
   s_complete_callback = NULL;
   s_waiting_for_code = false;
   s_agent_username[0] = '\0';
@@ -95,9 +120,7 @@ static void prv_phone_entered(const char* value) {
   s_waiting_for_code = true;
   // Give the user feedback while the phone contacts Telegram. The code entry
   // screen will be pushed when TELEGRAM_CODE_SENT arrives.
-  result_window_push_with_timeout("Connecting",
-                                  "Waiting for Telegram to send your code...",
-                                  NULL, GColorWhite, AUTH_RESPONSE_TIMEOUT_MS);
+  prv_show_waiting("Connecting", "Waiting for Telegram to send your code...");
   prv_arm_response_timer();
 }
 
@@ -119,9 +142,7 @@ static void prv_code_entered(const char* value) {
     return;
   }
 
-  result_window_push_with_timeout("Verifying",
-                                  "Checking your code with Telegram...",
-                                  NULL, GColorWhite, AUTH_RESPONSE_TIMEOUT_MS);
+  prv_show_waiting("Verifying", "Checking your code with Telegram...");
   prv_arm_response_timer();
 }
 
@@ -135,6 +156,7 @@ void auth_flow_start(AuthFlowCompleteCallback callback) {
     return;
   }
   prv_cancel_response_timer();
+  prv_dismiss_waiting();
   s_complete_callback = callback;
   s_waiting_for_code = false;
   s_agent_username[0] = '\0';
@@ -153,6 +175,7 @@ void auth_flow_start(AuthFlowCompleteCallback callback) {
 void auth_flow_handle_message(uint32_t key, const char* value) {
   if (key == MESSAGE_KEY_TELEGRAM_CODE_SENT) {
     prv_cancel_response_timer();
+    prv_dismiss_waiting();
     if (s_waiting_for_code) {
       // Clear this so a duplicate CODE_SENT doesn't stack another code window.
       s_waiting_for_code = false;
@@ -160,6 +183,7 @@ void auth_flow_handle_message(uint32_t key, const char* value) {
     }
   } else if (key == MESSAGE_KEY_TELEGRAM_CONNECTED) {
     prv_cancel_response_timer();
+    prv_dismiss_waiting();
     if (value) {
       snprintf(s_agent_username, sizeof(s_agent_username), "%s", value);
     } else {
@@ -174,6 +198,7 @@ void auth_flow_handle_message(uint32_t key, const char* value) {
     }
   } else if (key == MESSAGE_KEY_TELEGRAM_AUTH_ERROR) {
     prv_cancel_response_timer();
+    prv_dismiss_waiting();
     const char* message = (value && value[0])
         ? value
         : "Could not sign in to Telegram. Please try again.";
