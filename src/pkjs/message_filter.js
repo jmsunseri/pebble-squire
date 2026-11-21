@@ -15,8 +15,13 @@ var EXCLUDED_SUBSTRINGS = [
 function isExcludedMessage(text) {
     if (typeof text !== 'string') return false;
     var trimmed = text.replace(/^\s+/, '');
+    // The marker is sometimes preceded by an emoji or other decoration. Strip
+    // leading characters that are not ASCII letters before matching so
+    // "🔄 Self-improvement review:" (and keycap emoji such as "1️⃣") is treated
+    // the same as the bare prefix.
+    var normalized = trimmed.replace(/^[^A-Za-z]+/, '');
     for (var i = 0; i < EXCLUDED_PREFIXES.length; i++) {
-        if (trimmed.indexOf(EXCLUDED_PREFIXES[i]) === 0) {
+        if (normalized.indexOf(EXCLUDED_PREFIXES[i]) === 0) {
             return true;
         }
     }

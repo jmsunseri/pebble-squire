@@ -19,6 +19,14 @@ describe('excluded Telegram messages', () => {
         expect(isExcludedMessage(null)).toBe(false);
     });
 
+    it('matches an emoji or decoration before the opening text', () => {
+        expect(isExcludedMessage('\uD83D\uDD04 Self-improvement review: notes')).toBe(true);
+        expect(isExcludedMessage('\uD83D\uDD04\uFE0F  Self-improvement review: notes')).toBe(true);
+        expect(isExcludedMessage('\u2705 Self-improvement review: notes')).toBe(true);
+        expect(isExcludedMessage('\u2022 Self-improvement review: notes')).toBe(true);
+        expect(isExcludedMessage('\u0031\uFE0F\u20E3 Self-improvement review: notes')).toBe(true);
+    });
+
     it('matches Working — anywhere in the message', () => {
         expect(isExcludedMessage('Working \u2014 3 minutes')).toBe(true);
         expect(isExcludedMessage('Agent: Working \u2014 3 minutes')).toBe(true);
