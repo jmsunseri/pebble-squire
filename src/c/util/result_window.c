@@ -156,22 +156,25 @@ static void prv_load_centered(ResultWindowData* data, Layer* root_layer, GRect b
   text_layer_set_text_alignment(data->title_layer, GTextAlignmentCenter);
   text_layer_set_overflow_mode(data->title_layer, GTextOverflowModeWordWrap);
 
-  data->text_layer = btext_layer_create(GRect(10, 0, bounds.size.w - 20, 1000));
-  text_layer_set_background_color(data->text_layer, GColorClear);
-#ifdef PBL_COLOR
-  text_layer_set_text_color(data->text_layer, data->text_color);
-#else
-  text_layer_set_text_color(data->text_layer, GColorBlack);
-#endif
-  text_layer_set_text_alignment(data->text_layer, GTextAlignmentCenter);
-  text_layer_set_font(data->text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
-  text_layer_set_text(data->text_layer, data->text_text);
-  text_layer_set_overflow_mode(data->text_layer, GTextOverflowModeWordWrap);
-
   GSize title_size = text_layer_get_content_size(data->title_layer);
-  GSize text_size = text_layer_get_content_size(data->text_layer);
+  GSize text_size = GSize(0, 0);
+  if (data->text_text && data->text_text[0]) {
+    data->text_layer = btext_layer_create(GRect(10, 0, bounds.size.w - 20, 1000));
+    text_layer_set_background_color(data->text_layer, GColorClear);
+#ifdef PBL_COLOR
+    text_layer_set_text_color(data->text_layer, data->text_color);
+#else
+    text_layer_set_text_color(data->text_layer, GColorBlack);
+#endif
+    text_layer_set_text_alignment(data->text_layer, GTextAlignmentCenter);
+    text_layer_set_font(data->text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24));
+    text_layer_set_text(data->text_layer, data->text_text);
+    text_layer_set_overflow_mode(data->text_layer, GTextOverflowModeWordWrap);
+    text_size = text_layer_get_content_size(data->text_layer);
+  }
+
   const int16_t gap = 8;
-  int16_t group_height = title_size.h + gap + text_size.h;
+  int16_t group_height = title_size.h + (data->text_layer ? gap + text_size.h : 0);
   int16_t group_y = (bounds.size.h - group_height) / 2;
   if (group_y < 5) {
     group_y = 5;
@@ -180,9 +183,11 @@ static void prv_load_centered(ResultWindowData* data, Layer* root_layer, GRect b
   layer_set_frame(text_layer_get_layer(data->title_layer),
                   GRect(10, group_y, bounds.size.w - 20, title_size.h + 4));
   layer_add_child(root_layer, text_layer_get_layer(data->title_layer));
-  layer_set_frame(text_layer_get_layer(data->text_layer),
-                  GRect(10, group_y + title_size.h + gap, bounds.size.w - 20, text_size.h + 4));
-  layer_add_child(root_layer, text_layer_get_layer(data->text_layer));
+  if (data->text_layer) {
+    layer_set_frame(text_layer_get_layer(data->text_layer),
+                    GRect(10, group_y + title_size.h + gap, bounds.size.w - 20, text_size.h + 4));
+    layer_add_child(root_layer, text_layer_get_layer(data->text_layer));
+  }
 }
 
 static void prv_window_load(Window* window) {

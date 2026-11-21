@@ -106,13 +106,17 @@ static void prv_push_actual_session_window(int timeout, char *starting_prompt, c
 static void prv_auth_flow_complete(bool success, const char* agent_username) {
   if (success) {
     settings_set_telegram_connected(true);
-    char message[96];
+    char message[64];
     if (agent_username && agent_username[0]) {
-      snprintf(message, sizeof(message), "Your agent bot is %s.\nMake sure this matches the bot set in the app settings on your phone.", agent_username);
+      if (agent_username[0] == '@') {
+        snprintf(message, sizeof(message), "Talking with %s", agent_username);
+      } else {
+        snprintf(message, sizeof(message), "Talking with @%s", agent_username);
+      }
+      result_window_push_centered("Signed In!", message, GColorWhite, 4000);
     } else {
-      snprintf(message, sizeof(message), "Set your agent bot username in the app settings on your phone so messages go to the right bot.");
+      result_window_push_centered("Signed In!", NULL, GColorWhite, 4000);
     }
-    result_window_push_with_timeout("Signed In", message, NULL, GColorWhite, 10000);
   }
 }
 
