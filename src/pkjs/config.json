@@ -16,7 +16,7 @@
                 "type": "select",
                 "messageKey": "QUICK_LAUNCH_BEHAVIOUR",
                 "label": "Quick launch behaviour",
-                "description": "What to do when Squire is launched via Quick Launch. If 'start conversation' is selected, Squire will start listening immediately. If 'stay open' is chosen, Squire will quit after a minute of inactivity. If 'open home screen' is chosen, Squire will behave the same as if launched from the app launcher.",
+                "description": "What to do when Squire is launched via Quick Launch. 'Start conversation and time out' listens immediately and returns to the home screen after a minute of inactivity. 'Start conversation then stay open' listens immediately and leaves the conversation open. 'Open home screen' behaves the same as launching from the app launcher.",
                 "defaultValue": "1",
                 "options": [
                     {"label": "Start conversation and time out", "value": "1"},

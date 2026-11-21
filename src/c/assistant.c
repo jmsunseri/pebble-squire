@@ -86,11 +86,16 @@ int main(void) {
   } else {
     if (launch_reason() == APP_LAUNCH_QUICK_LAUNCH) {
       QuickLaunchBehaviour quick_launch_behaviour = settings_get_quick_launch_behaviour();
-      if (quick_launch_behaviour != QuickLaunchBehaviourHomeScreen) {
-        session_window_push(quick_launch_behaviour == QuickLaunchBehaviourConverseWithTimeout ? QUICK_LAUNCH_TIMEOUT_MS : 0, NULL);
-      } else {
-        s_root_window = root_window_create();
+      s_root_window = root_window_create();
+      if (quick_launch_behaviour == QuickLaunchBehaviourHomeScreen) {
         root_window_push(s_root_window);
+      } else {
+        // Put the home screen underneath the quick-launched conversation so
+        // Back (or the inactivity timeout) returns to it instead of quitting
+        // the app. Push it without animating so only the conversation animates
+        // in.
+        window_stack_push(root_window_get_window(s_root_window), false);
+        session_window_push(quick_launch_behaviour == QuickLaunchBehaviourConverseWithTimeout ? QUICK_LAUNCH_TIMEOUT_MS : 0, NULL);
       }
     } else {
       s_root_window = root_window_create();
