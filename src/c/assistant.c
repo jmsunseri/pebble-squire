@@ -95,7 +95,7 @@ int main(void) {
         // the app. Push it without animating so only the conversation animates
         // in.
         window_stack_push(root_window_get_window(s_root_window), false);
-        session_window_push(quick_launch_behaviour == QuickLaunchBehaviourConverseWithTimeout ? QUICK_LAUNCH_TIMEOUT_MS : 0, NULL);
+        session_window_push_recent(quick_launch_behaviour == QuickLaunchBehaviourConverseWithTimeout ? QUICK_LAUNCH_TIMEOUT_MS : 0, 2);
       }
     } else {
       s_root_window = root_window_create();

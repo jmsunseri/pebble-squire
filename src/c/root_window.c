@@ -72,6 +72,7 @@ static void prv_up_clicked(ClickRecognizerRef recognizer, void *context);
 static void prv_action_menu_closed(ActionMenu *action_menu, const ActionMenuItem *performed_action, void *context);
 static void prv_menu_about(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
 static void prv_menu_disconnect(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
+static void prv_menu_conversation(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
 static void prv_disconnect_confirm_selected(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
 static void prv_disconnect_confirm_menu_closed(ActionMenu *action_menu, const ActionMenuItem *performed_action, void *context);
 static void prv_app_message_handler(DictionaryIterator *iter, void *context);
@@ -216,7 +217,7 @@ static void prv_up_clicked(ClickRecognizerRef recognizer, void *context) {
   sample_prompts_menu_push();
 }
 
-static void prv_select_long_pressed(ClickRecognizerRef recognizer, void *context) {
+static void prv_open_conversation(void) {
   if (history_is_available()) {
     session_window_push_with_history(0, NULL, history_get_thread_id());
   } else if (history_is_loading()) {
@@ -228,21 +229,27 @@ static void prv_select_long_pressed(ClickRecognizerRef recognizer, void *context
   }
 }
 
+static void prv_select_long_pressed(ClickRecognizerRef recognizer, void *context) {
+  prv_open_conversation();
+}
+
 static void prv_action_menu_closed(ActionMenu *action_menu, const ActionMenuItem *performed_action, void *context) {
   action_menu_hierarchy_destroy(action_menu_get_root_level(action_menu), NULL, NULL);
 }
 
 static void prv_prompt_clicked(ClickRecognizerRef recognizer, void *context) {
-  // SELECT always starts a fresh voice conversation, regardless of history state.
-  session_window_push(0, NULL);
+  // Start a new question in the existing thread with the last exchange visible,
+  // or a fresh conversation when there is no history yet.
+  session_window_push_recent(0, 2);
 }
 
 static void prv_more_clicked(ClickRecognizerRef recognizer, void* context) {
   RootWindow* rw = context;
-  // About + Disconnect (with separator before Disconnect)
-  ActionMenuLevel *level = baction_menu_level_create(2);
+  // Conversation + About, with a separator before Disconnect.
+  ActionMenuLevel *level = baction_menu_level_create(3);
+  action_menu_level_add_action(level, "Conversation", prv_menu_conversation, NULL);
   action_menu_level_add_action(level, "About", prv_menu_about, NULL);
-  action_menu_level_set_separator_index(level, 1);
+  action_menu_level_set_separator_index(level, 2);
   action_menu_level_add_action(level, "Disconnect", prv_menu_disconnect, rw);
   ActionMenuConfig config = (ActionMenuConfig) {
     .root_level = level,
@@ -259,6 +266,10 @@ static void prv_more_clicked(ClickRecognizerRef recognizer, void* context) {
 
 static void prv_menu_about(ActionMenu *action_menu, const ActionMenuItem *action, void *context) {
   about_window_push();
+}
+
+static void prv_menu_conversation(ActionMenu *action_menu, const ActionMenuItem *action, void *context) {
+  prv_open_conversation();
 }
 
 static void prv_menu_disconnect(ActionMenu *action_menu, const ActionMenuItem *action, void *context) {

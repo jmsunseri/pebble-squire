@@ -69,6 +69,8 @@ struct SessionWindow {
   char* last_prompt_label;
   char* thread_id;
   bool load_history;
+  int history_limit;
+  bool dictation_after_history;
 };
 
 static void prv_window_load(Window *window);
@@ -99,7 +101,7 @@ void session_window_push(int timeout, char *starting_prompt) {
 
 void session_window_push_with_history(int timeout, char *starting_prompt, const char *thread_id);
 
-static void prv_push_actual_session_window(int timeout, char *starting_prompt, const char *thread_id);
+static void prv_push_actual_session_window(int timeout, char *starting_prompt, const char *thread_id, int history_limit, bool dictation_after_history);
 
 static void prv_auth_flow_complete(bool success, const char* agent_username) {
   if (success) {
@@ -120,10 +122,21 @@ void session_window_push_with_history(int timeout, char *starting_prompt, const 
     auth_flow_start(prv_auth_flow_complete);
     return;
   }
-  prv_push_actual_session_window(timeout, starting_prompt, thread_id);
+  prv_push_actual_session_window(timeout, starting_prompt, thread_id, 0, false);
 }
 
-static void prv_push_actual_session_window(int timeout, char *starting_prompt, const char *thread_id) {
+void session_window_push_recent(int timeout, int message_limit) {
+  if (!settings_is_telegram_connected()) {
+    auth_flow_start(prv_auth_flow_complete);
+    return;
+  }
+  // Start a new question in the existing thread, with the last few messages
+  // visible for context, and listen immediately.
+  const char* thread_id = history_is_available() ? history_get_thread_id() : NULL;
+  prv_push_actual_session_window(timeout, NULL, thread_id, message_limit, true);
+}
+
+static void prv_push_actual_session_window(int timeout, char *starting_prompt, const char *thread_id, int history_limit, bool dictation_after_history) {
 
   Window *window = bwindow_create();
   SessionWindow *sw = bmalloc(sizeof(SessionWindow));
@@ -131,6 +144,8 @@ static void prv_push_actual_session_window(int timeout, char *starting_prompt, c
   window_set_user_data(window, sw);
   sw->window = window;
   sw->timeout = timeout;
+  sw->history_limit = history_limit;
+  sw->dictation_after_history = dictation_after_history;
   if (starting_prompt != NULL) {
     sw->starting_prompt = bmalloc(strlen(starting_prompt) + 1);
     strncpy(sw->starting_prompt, starting_prompt, strlen(starting_prompt) + 1);
@@ -254,20 +269,26 @@ static void prv_window_appear(Window *window) {
   if (sw->load_history && history_is_available()) {
     Conversation* conv = conversation_manager_get_conversation(sw->manager);
     int count = history_get_count();
-    for (int i = 0; i < count; i++) {
+    int start = 0;
+    if (sw->history_limit > 0 && count > sw->history_limit) {
+      start = count - sw->history_limit;
+    }
+    int added = 0;
+    for (int i = start; i < count; i++) {
       const HistoryEntry* entry = history_get_entry(i);
       if (entry->type == HistoryEntryTypePrompt) {
         conversation_add_prompt(conv, entry->text);
       } else if (entry->type == HistoryEntryTypeResponse) {
         conversation_add_response(conv, entry->text);
       }
+      added++;
     }
     sw->load_history = false;
-    sw->dictation_pending = false;
+    sw->dictation_pending = sw->dictation_after_history;
     GSize holder_size = scroll_layer_get_content_size(sw->scroll_layer);
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < added; i++) {
       ConversationEntry* conv_entry = conversation_entry_at_index(conv, i);
-      bool is_last = (i == count - 1);
+      bool is_last = (i == added - 1);
       bool assistant_label = (conversation_entry_get_type(conv_entry) == EntryTypeResponse) && is_last;
       if (sw->segment_count == sw->segment_space) {
         SegmentLayer** new_block = bmalloc(sizeof(SegmentLayer*) * ++sw->segment_space);
@@ -623,6 +644,15 @@ static void prv_cancel_timeout(SessionWindow* sw) {
 }
 
 static void prv_timed_out(void *ctx) {
+  SessionWindow *sw = ctx;
+  sw->timeout_handle = NULL;
+  if (!conversation_is_idle(conversation_manager_get_conversation(sw->manager))) {
+    // The agent is still working. Don't close the conversation out from under
+    // the user; check again after another timeout interval.
+    SQUIRE_LOG(APP_LOG_LEVEL_DEBUG, "Timeout while waiting for a response; keeping conversation open");
+    prv_refresh_timeout(sw);
+    return;
+  }
   SQUIRE_LOG(APP_LOG_LEVEL_DEBUG, "Timed out");
   window_stack_pop(true);
 }

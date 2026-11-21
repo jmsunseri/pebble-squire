@@ -14,6 +14,9 @@ This release makes Telegram sign-in reliable and easier to recover from.
 - Back from a quick-launched conversation now returns to the Squire home screen instead of closing the app.
 - Quick launch still starts listening immediately; after the inactivity timeout it returns home.
 - Up now shows your recent prompts when Telegram history is available, so you can repeat one without retyping it. The canned prompts remain the fallback.
+- The Down menu now has Conversation, which reopens your last chat with the last few messages.
+- Starting a question now continues the last thread and shows its last two messages for context.
+- A long answer no longer closes the conversation at the quick-launch timeout; it stays open while the agent is still working.
 
 ### Under the hood
 
