@@ -13,6 +13,7 @@ This release makes Telegram sign-in reliable and easier to recover from.
 
 - Back from a quick-launched conversation now returns to the Squire home screen instead of closing the app.
 - Quick launch still starts listening immediately; after the inactivity timeout it returns home.
+- Up now shows your recent prompts when Telegram history is available, so you can repeat one without retyping it. The canned prompts remain the fallback.
 
 ### Under the hood
 

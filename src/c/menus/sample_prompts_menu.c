@@ -16,6 +16,7 @@
 
 #include "sample_prompts_menu.h"
 
+#include "../converse/history.h"
 #include "../converse/session_window.h"
 #include "../util/style.h"
 #include "../util/memory/malloc.h"
@@ -29,10 +30,21 @@ typedef struct {
   char *buffer;
   char **prompts;
   int count;
+  bool using_history;
+  bool waiting_for_history;
 } SamplePromptsMenuData;
+
+// Show the most recent few prompts. The entries are pointers into the fixed
+// history array, so showing more costs only a pointer each.
+#define RECENT_PROMPT_LIMIT 5
+
+// The visible menu, so the history-loaded callback can refresh it.
+static Window *s_window = NULL;
 
 static void prv_window_load(Window* window);
 static void prv_window_unload(Window* window);
+static void prv_load_source(SamplePromptsMenuData *data);
+static void prv_history_done(void);
 static uint16_t prv_get_num_rows(MenuLayer *menu_layer, uint16_t section_index, void *context);
 static void prv_draw_row(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *context);
 static void prv_select_click(MenuLayer *menu_layer, MenuIndex *cell_index, void *context);
@@ -45,6 +57,9 @@ static int prv_load_prompts(char *buffer, size_t size, char ***prompts) {
     }
   }
   *prompts = bmalloc(sizeof(char*) * count);
+  if (!*prompts) {
+    return 0;
+  }
   char *p = buffer;
   for (int i = 0; i < count; ++i) {
     (*prompts)[i] = p;
@@ -69,16 +84,86 @@ void sample_prompts_menu_push() {
   window_stack_push(window, true);
 }
 
+static void prv_load_canned_prompts(SamplePromptsMenuData *data) {
+  ResHandle handle = resource_get_handle(RESOURCE_ID_SAMPLE_PROMPTS);
+  size_t size = resource_size(handle);
+  // The resource is raw text without a terminator; add one so the last prompt
+  // does not read past the end of the buffer.
+  data->buffer = bmalloc(size + 1);
+  if (!data->buffer) return;
+  resource_load(handle, (uint8_t*)data->buffer, size);
+  data->buffer[size] = '\0';
+  data->count = prv_load_prompts(data->buffer, size, &data->prompts);
+  data->using_history = false;
+}
+
+static void prv_load_history_prompts(SamplePromptsMenuData *data) {
+  int total = history_get_count();
+  int available = 0;
+  for (int i = 0; i < total; i++) {
+    const HistoryEntry *entry = history_get_entry(i);
+    if (entry && entry->type == HistoryEntryTypePrompt) available++;
+  }
+  int count = available < RECENT_PROMPT_LIMIT ? available : RECENT_PROMPT_LIMIT;
+  if (count == 0) return;
+
+  data->prompts = bmalloc(sizeof(char*) * count);
+  if (!data->prompts) return;
+
+  // Walk backwards so the most recent prompt is first.
+  int idx = 0;
+  for (int i = total - 1; i >= 0 && idx < count; i--) {
+    const HistoryEntry *entry = history_get_entry(i);
+    if (entry && entry->type == HistoryEntryTypePrompt) {
+      // Point at the history entry; do not duplicate the text.
+      data->prompts[idx++] = (char*)entry->text;
+    }
+  }
+  data->count = idx;
+  data->using_history = idx > 0;
+}
+
+static void prv_load_source(SamplePromptsMenuData *data) {
+  if (data->prompts) {
+    free(data->prompts);
+    data->prompts = NULL;
+  }
+  if (data->buffer) {
+    free(data->buffer);
+    data->buffer = NULL;
+  }
+  data->count = 0;
+  data->using_history = false;
+  data->waiting_for_history = false;
+
+  prv_load_history_prompts(data);
+  if (data->count > 0) return;
+
+  if (history_is_loading()) {
+    data->waiting_for_history = true;
+    return;
+  }
+
+  prv_load_canned_prompts(data);
+}
+
+static void prv_history_done(void) {
+  if (!s_window) return;
+  SamplePromptsMenuData *data = window_get_user_data(s_window);
+  prv_load_source(data);
+  menu_layer_reload_data(data->menu_layer);
+}
+
 static void prv_window_load(Window* window) {
   SamplePromptsMenuData *data = window_get_user_data(window);
   Layer *root_layer = window_get_root_layer(window);
   GRect window_bounds = layer_get_frame(root_layer);
 
-  ResHandle handle = resource_get_handle(RESOURCE_ID_SAMPLE_PROMPTS);
-  size_t size = resource_size(handle);
-  data->buffer = bmalloc(size);
-  resource_load(handle, (uint8_t*)data->buffer, size);
-  data->count = prv_load_prompts(data->buffer, size, &data->prompts);
+  s_window = window;
+  prv_load_source(data);
+  if (data->waiting_for_history) {
+    history_set_done_callback(prv_history_done);
+  }
 
   window_set_background_color(window, GColorWhite);
 
@@ -103,22 +188,29 @@ static void prv_window_load(Window* window) {
 
 static void prv_window_unload(Window* window) {
   SamplePromptsMenuData *data = window_get_user_data(window);
+  history_set_done_callback(NULL);
+  s_window = NULL;
   menu_layer_destroy(data->menu_layer);
   status_bar_layer_destroy(data->status_bar);
   free(data->prompts);
-  free(data->buffer);
+  if (data->buffer) {
+    free(data->buffer);
+  }
   free(data);
   window_destroy(window);
 }
 
 static uint16_t prv_get_num_rows(MenuLayer *menu_layer, uint16_t section_index, void *context) {
   SamplePromptsMenuData *data = context;
+  if (data->count == 0) return 1;
   return data->count;
 }
 
 static void prv_draw_row(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *context) {
   SamplePromptsMenuData *data = context;
-  const char *title = data->prompts[cell_index->row];
+  const char *title = data->count == 0
+      ? (data->waiting_for_history ? "Loading history..." : "No recent prompts")
+      : data->prompts[cell_index->row];
 #ifdef PBL_ROUND
   GRect bounds = layer_get_bounds(cell_layer);
   graphics_draw_text(ctx, title,
@@ -134,6 +226,14 @@ static void prv_draw_row(GContext *ctx, const Layer *cell_layer, MenuIndex *cell
 
 static void prv_select_click(MenuLayer *menu_layer, MenuIndex *cell_index, void *context) {
   SamplePromptsMenuData *data = context;
+  if (data->count == 0) return;
+
   const char *prompt = data->prompts[cell_index->row];
-  session_window_push(0, (char*)prompt);
+  const char *thread_id = history_get_thread_id();
+  if (data->using_history && thread_id && thread_id[0]) {
+    // Reuse the prompt in the conversation it came from.
+    session_window_push_with_history(0, (char*)prompt, thread_id);
+  } else {
+    session_window_push(0, (char*)prompt);
+  }
 }

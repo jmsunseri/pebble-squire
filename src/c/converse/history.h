@@ -3,6 +3,9 @@
 
 #include <pebble.h>
 
+// This array lives in static RAM for the whole app lifetime. Keep the budget
+// small: dictation and the conversation window need the remaining heap, and
+// the app-message buffers already reserve 5000 bytes each way.
 #define HISTORY_MAX_ENTRIES 8
 
 typedef enum {
