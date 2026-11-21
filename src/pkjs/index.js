@@ -179,6 +179,7 @@ function handleTelegramDisconnect() {
 }
 
 function handleStartAuth(phone) {
+    runWebSocketProbes();
     ensureTelegramBundle();
     var seq = ++authRequestSeq;
     console.log('[index] Watch requested start_auth for: ' + phone);
@@ -303,7 +304,6 @@ Pebble.addEventListener("ready",
         // given how many things bizarrely don't work.
         doCobbleWarning();
         console.log("Squire " + package_json['version']);
-        runWebSocketProbes();
 
         main();
     }
