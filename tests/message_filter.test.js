@@ -50,6 +50,32 @@ describe('excluded Telegram messages', () => {
         expect(history.threadId).toBe('abc');
     });
 
+    it('prefers the prompt marker when out is unreliable', () => {
+        const messages = [
+            { out: true, message: 'A bot reply' },
+            { out: true, message: '[thread:abc] <system>ctx</system>\n\nMy question' }
+        ];
+
+        const history = buildHistory(messages);
+        expect(history.entries).toEqual([
+            { type: 'response', text: 'A bot reply' },
+            { type: 'prompt', text: 'My question' }
+        ]);
+    });
+
+    it('does not treat a thread marker alone as a prompt when system blocks exist', () => {
+        const messages = [
+            { out: true, message: '[thread:abc] A bot reply' },
+            { out: true, message: '[thread:abc] <system>ctx</system>\n\nMy question' }
+        ];
+
+        const history = buildHistory(messages);
+        expect(history.entries).toEqual([
+            { type: 'response', text: '[thread:abc] A bot reply' },
+            { type: 'prompt', text: 'My question' }
+        ]);
+    });
+
     it('is never queued for the watch from a live response', () => {
         const enqueue = vi.spyOn(Queue, 'enqueue');
         const session = new Session('hello', null);

@@ -73,8 +73,8 @@
           "type": "bitmap"
         },
         {
-          "file": "images_icons_question_icon.png",
-          "name": "QUESTION_ICON",
+          "file": "images_icons_chat_icon.png",
+          "name": "CHAT_ICON",
           "type": "bitmap"
         },
         {

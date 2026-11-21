@@ -51,7 +51,7 @@ struct RootWindow {
   Window* window;
   ActionBarLayer* action_bar;
   SessionWindow* session_window;
-  GBitmap* question_icon;
+  GBitmap* chat_icon;
   GBitmap* dictation_icon;
   GBitmap* more_icon;
   TalkingSquireLayer* talking_squire_layer;
@@ -69,10 +69,11 @@ static void prv_prompt_clicked(ClickRecognizerRef recognizer, void *context);
 static void prv_select_long_pressed(ClickRecognizerRef recognizer, void *context);
 static void prv_more_clicked(ClickRecognizerRef recognizer, void* context);
 static void prv_up_clicked(ClickRecognizerRef recognizer, void *context);
+static void prv_open_conversation(void);
 static void prv_action_menu_closed(ActionMenu *action_menu, const ActionMenuItem *performed_action, void *context);
 static void prv_menu_about(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
 static void prv_menu_disconnect(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
-static void prv_menu_conversation(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
+static void prv_menu_ask_again(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
 static void prv_disconnect_confirm_selected(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
 static void prv_disconnect_confirm_menu_closed(ActionMenu *action_menu, const ActionMenuItem *performed_action, void *context);
 static void prv_app_message_handler(DictionaryIterator *iter, void *context);
@@ -112,12 +113,12 @@ static void prv_window_appear(Window* window) {
   RootWindow* rw = window_get_user_data(window);
   GRect bounds = layer_get_bounds(window_get_root_layer(rw->window));
   window_set_background_color(rw->window, COLOR_FALLBACK(ACCENT_COLOUR, GColorWhite));
-  rw->question_icon = bgbitmap_create_with_resource(RESOURCE_ID_QUESTION_ICON);
+  rw->chat_icon = bgbitmap_create_with_resource(RESOURCE_ID_CHAT_ICON);
   rw->dictation_icon = bgbitmap_create_with_resource(RESOURCE_ID_DICTATION_ICON);
   rw->more_icon = bgbitmap_create_with_resource(RESOURCE_ID_MORE_ICON);
   rw->action_bar = baction_bar_layer_create();
   action_bar_layer_set_context(rw->action_bar, rw);
-  action_bar_layer_set_icon(rw->action_bar, BUTTON_ID_UP, rw->question_icon);
+  action_bar_layer_set_icon(rw->action_bar, BUTTON_ID_UP, rw->chat_icon);
   action_bar_layer_set_icon(rw->action_bar, BUTTON_ID_SELECT, rw->dictation_icon);
   action_bar_layer_set_icon(rw->action_bar, BUTTON_ID_DOWN, rw->more_icon);
   action_bar_layer_add_to_window(rw->action_bar, window);
@@ -146,7 +147,7 @@ static void prv_window_disappear(Window* window) {
     rw->app_message_handle = NULL;
   }
   action_bar_layer_destroy(rw->action_bar);
-  gbitmap_destroy(rw->question_icon);
+  gbitmap_destroy(rw->chat_icon);
   gbitmap_destroy(rw->dictation_icon);
   gbitmap_destroy(rw->more_icon);
   talking_squire_layer_destroy(rw->talking_squire_layer);
@@ -214,7 +215,7 @@ static void prv_push_loading_window(void) {
 }
 
 static void prv_up_clicked(ClickRecognizerRef recognizer, void *context) {
-  sample_prompts_menu_push();
+  prv_open_conversation();
 }
 
 static void prv_open_conversation(void) {
@@ -245,9 +246,9 @@ static void prv_prompt_clicked(ClickRecognizerRef recognizer, void *context) {
 
 static void prv_more_clicked(ClickRecognizerRef recognizer, void* context) {
   RootWindow* rw = context;
-  // Conversation + About, with a separator before Disconnect.
+  // Ask Again + About, with a separator before Disconnect.
   ActionMenuLevel *level = baction_menu_level_create(3);
-  action_menu_level_add_action(level, "Conversation", prv_menu_conversation, NULL);
+  action_menu_level_add_action(level, "Ask Again", prv_menu_ask_again, NULL);
   action_menu_level_add_action(level, "About", prv_menu_about, NULL);
   action_menu_level_set_separator_index(level, 2);
   action_menu_level_add_action(level, "Disconnect", prv_menu_disconnect, rw);
@@ -268,8 +269,8 @@ static void prv_menu_about(ActionMenu *action_menu, const ActionMenuItem *action
   about_window_push();
 }
 
-static void prv_menu_conversation(ActionMenu *action_menu, const ActionMenuItem *action, void *context) {
-  prv_open_conversation();
+static void prv_menu_ask_again(ActionMenu *action_menu, const ActionMenuItem *action, void *context) {
+  sample_prompts_menu_push();
 }
 
 static void prv_menu_disconnect(ActionMenu *action_menu, const ActionMenuItem *action, void *context) {

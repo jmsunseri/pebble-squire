@@ -13,6 +13,19 @@ function formatLoggedMessage(message) {
 }
 
 function buildHistory(messages) {
+    // Telegram's `out` flag is unreliable in the bot chat. Our prompts always
+    // carry the system block; bot replies do not. When any message has that
+    // block, use it to classify direction and fall back to the thread marker or
+    // `out` only for older history.
+    var batchHasSystemBlock = false;
+    for (var b = 0; b < messages.length; b++) {
+        var bm = messages[b];
+        if (bm && bm.message && bm.message.indexOf('<system>') !== -1) {
+            batchHasSystemBlock = true;
+            break;
+        }
+    }
+
     var historyEntries = [];
     for (var i = 0; i < messages.length && historyEntries.length < HISTORY_LIMIT; i++) {
         var msg = messages[i];
@@ -24,7 +37,10 @@ function buildHistory(messages) {
         }
 
         var text = msg.message;
-        var isOwn = msg.out === true || msg.out === 1;
+        var hasSystemBlock = text.indexOf('<system>') !== -1;
+        var isOwn = batchHasSystemBlock
+            ? hasSystemBlock
+            : (text.indexOf('[thread:') === 0 || msg.out === true || msg.out === 1);
         console.log('[history] raw message out=', msg.out, 'text=', formatLoggedMessage(text));
 
         if (isOwn) {
