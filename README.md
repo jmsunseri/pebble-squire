@@ -37,6 +37,11 @@ Watch App → Phone App (pkjs) → Telegram MTProto → Hermes/OpenClaw Bot
 3. Build: `pebble build`
 4. Install: `pebble install`
 
+The build writes `build/pebble-js-app.js.map` so `pebble logs` can map phone log
+lines back to source, but leaves it out of the packaged `.pbw`. The SDK would
+otherwise ship the map, which is larger than the app's JavaScript and counts
+against the appstore's 4.4 MB limit. See `wscript`.
+
 ### 2. Configuration
 
 1. Open the application settings on your phone (or run `./open-clay-config.py` in the emulator)

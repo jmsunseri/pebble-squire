@@ -18,6 +18,23 @@ top = '.'
 out = 'build'
 
 
+from waflib.TaskGen import after_method, before_method, feature
+
+
+@feature('bundle')
+@after_method('process_js')
+@before_method('make_pbl_bundle')
+def prune_js_source_map(task_gen):
+    """Keep pebble-js-app.js.map out of the packaged .pbw.
+
+    The SDK always emits a source map for multi-JS projects and packs it into
+    the bundle. The map is larger than the JS itself and is only useful for
+    local debugging, so leave it in build/ but do not ship it.
+    """
+    task_gen.js = [js for js in getattr(task_gen, 'js', [])
+                   if not js.abspath().endswith('.js.map')]
+
+
 def options(ctx):
     ctx.load('pebble_sdk')
 
