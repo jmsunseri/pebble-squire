@@ -152,7 +152,14 @@ function ensureTelegramBundle() {
         installPolyfills();
         installWebSocketWrapper();
 
-        var bundled = require('./telegram-bundle.js');
+        // The bundle is an IIFE that publishes its exports as
+        // globalThis.TelegramBundle; requiring it is for side effects only.
+        require('./telegram-bundle.js');
+        var bundled = G.TelegramBundle;
+        if (!bundled) {
+            console.error('[bundle] Telegram bundle did not publish its exports');
+            return;
+        }
         setGlobal('TelegramClient', bundled.TelegramClient);
         setGlobal('StringSession', bundled.StringSession);
         setGlobal('TelegramApi', bundled.Api);
