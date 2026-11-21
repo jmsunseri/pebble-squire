@@ -80,6 +80,16 @@ int main(void) {
   VersionInfo version_info = version_get_current();
   SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Squire %d.%d", version_info.major, version_info.minor);
   prv_init();
+
+#ifdef _PBL_API_EXISTS_app_touch_navigation_enable
+  // Third-party apps are opted out by default. Opt in so menus and the
+  // What's New screen can be driven by touch when the user enables it.
+  app_touch_navigation_enable(true);
+#ifdef _PBL_API_EXISTS_touch_service_is_enabled
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Touch navigation %s",
+             touch_service_is_enabled() ? "enabled" : "unavailable");
+#endif
+#endif
   
   if (must_present_consent()) {
     consent_window_push();

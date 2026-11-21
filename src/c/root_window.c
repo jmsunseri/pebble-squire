@@ -107,7 +107,10 @@ Window* root_window_get_window(RootWindow* window) {
 }
 
 static void prv_window_load(Window *window) {
-  // RootWindow* root_window = (RootWindow*)window_get_user_data(window);
+#ifdef _PBL_API_EXISTS_window_set_touch_bridge_disabled
+  // The home screen ignores touch so a tap cannot start dictation.
+  window_set_touch_bridge_disabled(window, true);
+#endif
 }
 
 static void prv_window_appear(Window* window) {

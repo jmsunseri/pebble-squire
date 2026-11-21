@@ -207,6 +207,10 @@ static void prv_destroy(SessionWindow *sw) {
 }
 
 static void prv_window_load(Window *window) {
+#ifdef _PBL_API_EXISTS_window_set_touch_bridge_disabled
+  // Don't let touch scrolling or tap-to-dictate interfere with a conversation.
+  window_set_touch_bridge_disabled(window, true);
+#endif
   Layer* root_layer = window_get_root_layer(window);
   GSize window_size = layer_get_frame(window_get_root_layer(window)).size;
   SessionWindow *sw = window_get_user_data(window);
