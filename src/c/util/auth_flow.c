@@ -23,11 +23,42 @@
 
 #include <pebble.h>
 
+// Keep this below the phone-side auth timeout so the phone normally reports a
+// concrete error before the watch gives up.
+#define AUTH_RESPONSE_TIMEOUT_MS 45000
+
 static AuthFlowCompleteCallback s_complete_callback = NULL;
 static bool s_waiting_for_code = false;
 static char s_agent_username[64];
+static AppTimer* s_response_timer = NULL;
+
+static void prv_cancel_response_timer(void) {
+  if (s_response_timer) {
+    app_timer_cancel(s_response_timer);
+    s_response_timer = NULL;
+  }
+}
+
+static void prv_response_timed_out(void* context) {
+  s_response_timer = NULL;
+  if (!s_complete_callback) return;
+  SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Timed out waiting for phone auth response");
+  s_waiting_for_code = false;
+  AuthFlowCompleteCallback cb = s_complete_callback;
+  s_complete_callback = NULL;
+  result_window_push_persistent("No Response",
+                                "The phone did not answer. Make sure the Pebble app is open and connected, then try again.",
+                                NULL, GColorWhite);
+  cb(false, NULL);
+}
+
+static void prv_arm_response_timer(void) {
+  prv_cancel_response_timer();
+  s_response_timer = app_timer_register(AUTH_RESPONSE_TIMEOUT_MS, prv_response_timed_out, NULL);
+}
 
 static void prv_cancel(void) {
+  prv_cancel_response_timer();
   s_complete_callback = NULL;
   s_waiting_for_code = false;
   s_agent_username[0] = '\0';
@@ -54,7 +85,12 @@ static void prv_phone_entered(const char* value) {
   }
 
   s_waiting_for_code = true;
-  // Don't block the UI; the code entry screen will be pushed when TELEGRAM_CODE_SENT arrives.
+  // Give the user feedback while the phone contacts Telegram. The code entry
+  // screen will be pushed when TELEGRAM_CODE_SENT arrives.
+  result_window_push_with_timeout("Connecting",
+                                  "Waiting for Telegram to send your code...",
+                                  NULL, GColorWhite, AUTH_RESPONSE_TIMEOUT_MS);
+  prv_arm_response_timer();
 }
 
 static void prv_code_entered(const char* value) {
@@ -75,10 +111,22 @@ static void prv_code_entered(const char* value) {
     return;
   }
 
-  result_window_push("Verifying...", "Checking your code with Telegram.", NULL, GColorWhite);
+  result_window_push_with_timeout("Verifying",
+                                  "Checking your code with Telegram...",
+                                  NULL, GColorWhite, AUTH_RESPONSE_TIMEOUT_MS);
+  prv_arm_response_timer();
 }
 
 void auth_flow_start(AuthFlowCompleteCallback callback) {
+  if (s_complete_callback && s_waiting_for_code) {
+    // Don't silently throw away a request that is already in flight. The
+    // response timer will clear it if the phone never answers.
+    result_window_push("Still Waiting",
+                       "Telegram has not responded yet. Wait for the code or try again shortly.",
+                       NULL, GColorWhite);
+    return;
+  }
+  prv_cancel_response_timer();
   s_complete_callback = callback;
   s_waiting_for_code = false;
   s_agent_username[0] = '\0';
@@ -87,10 +135,14 @@ void auth_flow_start(AuthFlowCompleteCallback callback) {
 
 void auth_flow_handle_message(uint32_t key, const char* value) {
   if (key == MESSAGE_KEY_TELEGRAM_CODE_SENT) {
+    prv_cancel_response_timer();
     if (s_waiting_for_code) {
+      // Clear this so a duplicate CODE_SENT doesn't stack another code window.
+      s_waiting_for_code = false;
       auth_entry_window_push_with_prefix("Enter Code", 5, false, prv_code_entered, prv_cancel);
     }
   } else if (key == MESSAGE_KEY_TELEGRAM_CONNECTED) {
+    prv_cancel_response_timer();
     if (value) {
       snprintf(s_agent_username, sizeof(s_agent_username), "%s", value);
     } else {
@@ -104,7 +156,11 @@ void auth_flow_handle_message(uint32_t key, const char* value) {
       s_agent_username[0] = '\0';
     }
   } else if (key == MESSAGE_KEY_TELEGRAM_AUTH_ERROR) {
-    result_window_push_persistent("Auth Failed", "Could not sign in to Telegram. Please try again.", NULL, GColorWhite);
+    prv_cancel_response_timer();
+    const char* message = (value && value[0])
+        ? value
+        : "Could not sign in to Telegram. Please try again.";
+    result_window_push_persistent("Auth Failed", message, NULL, GColorWhite);
     if (s_complete_callback) {
       AuthFlowCompleteCallback cb = s_complete_callback;
       s_complete_callback = NULL;

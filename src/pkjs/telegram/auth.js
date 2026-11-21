@@ -27,23 +27,85 @@ var phoneCodeHash = null;
 var pendingPhone = null;
 var authSession = null;
 var authInProgress = false;
+var authStartedAt = 0;
+var authGeneration = 0;
+var pendingClient = null;
 
 var AUTH_STATE_KEY = 'telegram_auth_waiting_for_code';
+
+// A new request may replace an in-flight one after this long. This keeps a
+// double-tap from triggering a second SendCode, but lets a stuck request be
+// retried instead of locking the user out until the JS context restarts.
+var AUTH_SUPERSEDE_MS = 15000;
+// Upper bound for one GramJS auth operation. Must stay below the watch's
+// response timer so the watch gets an explicit failure rather than silence.
+var AUTH_OPERATION_TIMEOUT_MS = 40000;
+
+function clearPendingClient() {
+    var c = pendingClient;
+    pendingClient = null;
+    if (!c) return;
+    try {
+        c.disconnect().catch(function() {});
+    } catch (e) {
+        console.log('[auth] Failed to disconnect pending client: ' + (e.message || e));
+    }
+}
+
+function clearPendingAuthData() {
+    phoneCodeHash = null;
+    authSession = null;
+    pendingPhone = null;
+    clearPendingClient();
+    try { localStorage.removeItem(AUTH_STATE_KEY); } catch(e) {}
+}
+
+function resetAuthState(reason) {
+    authGeneration++;
+    authInProgress = false;
+    authStartedAt = 0;
+    clearPendingAuthData();
+    if (reason) {
+        console.log('[auth] Reset auth state: ' + reason);
+    }
+}
+
+function withTimeout(promise, ms, message) {
+    return new Promise(function(resolve, reject) {
+        var timer = setTimeout(function() {
+            reject(new Error(message));
+        }, ms);
+        promise.then(function(value) {
+            clearTimeout(timer);
+            resolve(value);
+        }, function(err) {
+            clearTimeout(timer);
+            reject(err);
+        });
+    });
+}
 
 function withAuthLock(fn) {
     return function() {
         if (authInProgress) {
-            return Promise.reject(new Error('Authentication already in progress'));
+            var age = Date.now() - authStartedAt;
+            if (age < AUTH_SUPERSEDE_MS) {
+                return Promise.reject(new Error('Authentication already in progress'));
+            }
+            console.log('[auth] Replacing stale auth request (' + age + 'ms old)');
+            resetAuthState('stale request replaced');
         }
         authInProgress = true;
+        authStartedAt = Date.now();
+        var generation = authGeneration;
         var args = arguments;
         return Promise.resolve()
             .then(function() { return fn.apply(null, args); })
             .then(function(result) {
-                authInProgress = false;
+                if (generation === authGeneration) authInProgress = false;
                 return result;
             }, function(err) {
-                authInProgress = false;
+                if (generation === authGeneration) authInProgress = false;
                 throw err;
             });
     };
@@ -75,9 +137,14 @@ function createAuthClient() {
 
 function startAuth(phoneNumber) {
     console.log('[auth] startAuth called for phone: ' + phoneNumber);
+    var generation = authGeneration;
     pendingPhone = phoneNumber;
-    return new Promise(function(resolve, reject) {
+    phoneCodeHash = null;
+    authSession = null;
+
+    var operation = new Promise(function(resolve, reject) {
         var authClient = createAuthClient();
+        pendingClient = authClient;
         var Api = (typeof TelegramApi !== 'undefined') ? TelegramApi : (authClient.Api || {});
         var apiId = parseInt(process.env.TELEGRAM_APP_ID, 10);
         var apiHash = process.env.TELEGRAM_APP_HASH || '';
@@ -91,34 +158,58 @@ function startAuth(phoneNumber) {
                 settings: new Api.CodeSettings({})
             }));
         }).then(function(result) {
+            if (generation !== authGeneration) {
+                console.log('[auth] Superseded auth request; discarding SendCode result');
+                try { authClient.disconnect(); } catch (e) {}
+                return;
+            }
             console.log('[auth] SendCode result: phoneCodeHash=' + (result.phoneCodeHash ? 'received' : 'missing'));
             if (!result || !result.phoneCodeHash) {
                 if (result && result.className === 'auth.SentCodeSuccess') {
+                    clearPendingAuthData();
                     reject(new Error('This session is already authorized.'));
                     return;
                 }
+                clearPendingAuthData();
                 reject(new Error('Telegram did not return a login code hash.'));
                 return;
             }
             phoneCodeHash = result.phoneCodeHash;
             authSession = authClient.session.save();
             try { localStorage.setItem(AUTH_STATE_KEY, 'true'); } catch(e) {}
+            // The code is tied to authSession; don't keep a second connection
+            // open with the same auth key while the user enters it.
+            clearPendingClient();
             resolve({
                 success: true,
                 status: 'code_sent'
             });
         }).catch(function(err) {
+            if (generation !== authGeneration) {
+                console.log('[auth] Superseded auth request; ignoring SendCode failure');
+                try { authClient.disconnect(); } catch (e) {}
+                return;
+            }
             console.error('[auth] startAuth failed: ' + (err.message || err));
-            try { localStorage.removeItem(AUTH_STATE_KEY); } catch(e) {}
+            clearPendingAuthData();
             reject(new Error('Auth failed: ' + (err.errorMessage || err.message)));
         });
     });
+
+    return withTimeout(operation, AUTH_OPERATION_TIMEOUT_MS, 'Telegram did not respond in time')
+        .catch(function(err) {
+            if (err && err.message === 'Telegram did not respond in time') {
+                resetAuthState('startAuth timeout');
+            }
+            throw err;
+        });
 }
 
 function provideCode(code) {
     console.log('[auth] provideCode called');
+    var generation = authGeneration;
     try { localStorage.removeItem(AUTH_STATE_KEY); } catch(e) {}
-    return new Promise(function(resolve, reject) {
+    var operation = new Promise(function(resolve, reject) {
         if (!phoneCodeHash) {
             reject(new Error('No pending code request — call startAuth first'));
             return;
@@ -133,6 +224,7 @@ function provideCode(code) {
             systemVersion: '1.0',
             appVersion: '1.0'
         });
+        pendingClient = signInClient;
         var Api = (typeof TelegramApi !== 'undefined') ? TelegramApi : (signInClient.Api || {});
 
         signInClient.connect().then(function() {
@@ -143,21 +235,32 @@ function provideCode(code) {
                 phoneCode: code
             }));
         }).then(function(result) {
+            if (generation !== authGeneration) {
+                console.log('[auth] Superseded auth request; discarding SignIn result');
+                try { signInClient.disconnect(); } catch (e) {}
+                return;
+            }
             console.log('[auth] SignIn successful');
             var sessionStr = signInClient.session.save();
             session.saveSession(sessionStr);
-            phoneCodeHash = null;
-            authSession = null;
+            clearPendingAuthData();
             resolve({
                 success: true,
                 status: 'signed_in'
             });
         }).catch(function(err) {
+            if (generation !== authGeneration) {
+                console.log('[auth] Superseded auth request; ignoring SignIn failure');
+                try { signInClient.disconnect(); } catch (e) {}
+                return;
+            }
             var msg = err.errorMessage || err.message || '';
             console.error('[auth] SignIn failed: ' + msg);
             if (msg === 'SESSION_PASSWORD_NEEDED') {
                 console.log('[auth] 2FA required');
                 authSession = signInClient.session.save();
+                try { signInClient.disconnect(); } catch (e) {}
+                pendingClient = null;
                 phoneCodeHash = null;
                 resolve({
                     success: false,
@@ -166,16 +269,24 @@ function provideCode(code) {
                 });
                 return;
             }
-            phoneCodeHash = null;
-            authSession = null;
+            clearPendingAuthData();
             reject(new Error('SignIn failed: ' + msg));
         });
     });
+
+    return withTimeout(operation, AUTH_OPERATION_TIMEOUT_MS, 'Telegram did not respond in time')
+        .catch(function(err) {
+            if (err && err.message === 'Telegram did not respond in time') {
+                resetAuthState('provideCode timeout');
+            }
+            throw err;
+        });
 }
 
 function providePassword(password) {
     console.log('[auth] providePassword called');
-    return new Promise(function(resolve, reject) {
+    var generation = authGeneration;
+    var operation = new Promise(function(resolve, reject) {
         if (!authSession) {
             reject(new Error('No pending 2FA request — sign in first'));
             return;
@@ -189,6 +300,7 @@ function providePassword(password) {
             systemVersion: '1.0',
             appVersion: '1.0'
         });
+        pendingClient = pwClient;
 
         pwClient.connect().then(function() {
             return pwClient.signInWithPassword({
@@ -203,20 +315,38 @@ function providePassword(password) {
                 }
             });
         }).then(function() {
+            if (generation !== authGeneration) {
+                console.log('[auth] Superseded auth request; discarding 2FA result');
+                try { pwClient.disconnect(); } catch (e) {}
+                return;
+            }
             console.log('[auth] 2FA successful');
             var sessionStr = pwClient.session.save();
             session.saveSession(sessionStr);
-            authSession = null;
+            clearPendingAuthData();
             resolve({
                 success: true,
                 status: 'signed_in'
             });
         }).catch(function(err) {
+            if (generation !== authGeneration) {
+                console.log('[auth] Superseded auth request; ignoring 2FA failure');
+                try { pwClient.disconnect(); } catch (e) {}
+                return;
+            }
             console.error('[auth] 2FA failed: ' + (err.message || err));
-            authSession = null;
+            clearPendingAuthData();
             reject(new Error('2FA failed: ' + (err.message || err)));
         });
     });
+
+    return withTimeout(operation, AUTH_OPERATION_TIMEOUT_MS, 'Telegram did not respond in time')
+        .catch(function(err) {
+            if (err && err.message === 'Telegram did not respond in time') {
+                resetAuthState('providePassword timeout');
+            }
+            throw err;
+        });
 }
 
 function checkConnection() {
@@ -241,10 +371,13 @@ function checkConnection() {
 
 function logout() {
     console.log('[auth] logout called');
+    // Invalidate any in-flight auth request and clear its lock. Without this,
+    // disconnecting mid-auth leaves the next attempt failing with
+    // "Authentication already in progress".
+    resetAuthState('logout');
     return new Promise(function(resolve, reject) {
         client.disconnect().then(function() {
             console.log('[auth] Disconnected and session cleared');
-            phoneCodeHash = null;
             resolve();
         }).catch(function(err) {
             console.error('[auth] Logout failed: ' + (err.message || err));

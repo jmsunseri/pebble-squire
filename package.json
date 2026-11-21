@@ -61,7 +61,8 @@
       "TELEGRAM_PROVIDE_CODE",
       "TELEGRAM_CODE_SENT",
       "TELEGRAM_AUTH_ERROR",
-      "TELEGRAM_DISCONNECT"
+      "TELEGRAM_DISCONNECT",
+      "TELEGRAM_AUTH_ERROR_REASON"
     ],
     "resources": {
       "media": [

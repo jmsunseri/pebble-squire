@@ -34,8 +34,15 @@ Session.prototype.run = function() {
 
     // Check if we have a Telegram session
     if (!telegram.hasSession()) {
+        // The watch caches the connection state in persist storage. Tell it
+        // the truth so a stale "connected" flag clears itself.
+        try {
+            Pebble.sendAppMessage({ TELEGRAM_CONNECTED: 0 });
+        } catch (err) {
+            console.error('[session] Failed to send disconnected status: ' + (err.message || err));
+        }
         this.enqueue({
-            CHAT: 'Not connected to Telegram. Please configure your Telegram connection in the app settings.'
+            CHAT: 'Not connected to Telegram. Go back and sign in again.'
         });
         this.enqueue({
             CHAT_DONE: true

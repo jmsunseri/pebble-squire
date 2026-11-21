@@ -37,21 +37,157 @@ function main() {
     Pebble.addEventListener('appmessage', handleAppMessage);
 }
 
+// Identifies the current auth request so a superseded request's late result
+// doesn't send a stale code/error to the watch.
+var authRequestSeq = 0;
+
 function sendTelegramStatus() {
-    var isConnected = telegram.hasSession();
-    console.log('Telegram connected: ' + isConnected);
+    var attempt = 0;
+    function send() {
+        attempt++;
+        var isConnected = telegram.hasSession();
+        console.log('Telegram connected: ' + isConnected);
+        Pebble.sendAppMessage({
+            TELEGRAM_CONNECTED: isConnected ? 1 : 0
+        }, function() {
+            console.log('[index] Telegram status sent');
+        }, function(e) {
+            console.error('[index] Failed to send Telegram status: ' + JSON.stringify(e));
+            if (attempt < 3) setTimeout(send, 1000);
+        });
+    }
+    send();
+}
+
+function describeAuthError(err) {
+    var msg = (err && (err.errorMessage || err.message)) || '';
+    if (msg.indexOf('API_ID_INVALID') !== -1) {
+        return 'This build has no valid Telegram API credentials.';
+    }
+    if (msg.indexOf('PHONE_NUMBER_INVALID') !== -1) {
+        return 'That phone number is not valid.';
+    }
+    if (msg.indexOf('PHONE_NUMBER_BANNED') !== -1) {
+        return 'Telegram has blocked this phone number.';
+    }
+    var flood = msg.match(/FLOOD_WAIT_(\d+)/);
+    if (flood) {
+        return 'Telegram asked us to wait ' + flood[1] + ' seconds before trying again.';
+    }
+    if (msg.indexOf('PHONE_CODE_INVALID') !== -1) {
+        return 'That code was incorrect. Sign in again to request a new code.';
+    }
+    if (msg.indexOf('PHONE_CODE_EXPIRED') !== -1) {
+        return 'That code expired. Sign in again to request a new one.';
+    }
+    if (msg.indexOf('SESSION_PASSWORD_NEEDED') !== -1) {
+        return 'This account has 2FA enabled, which is not supported yet.';
+    }
+    if (msg.indexOf('Authentication already in progress') !== -1) {
+        return 'A previous sign-in is still running. Wait a moment and try again.';
+    }
+    if (msg.indexOf('did not respond in time') !== -1 || msg.indexOf('timed out') !== -1) {
+        return 'Telegram did not respond. Check the phone connection and try again.';
+    }
+    if (msg.indexOf('session expired') !== -1 || msg.indexOf('re-authenticate') !== -1) {
+        return 'Your Telegram session expired. Sign in again.';
+    }
+    return 'Could not sign in to Telegram. Check the phone connection and try again.';
+}
+
+function sendAuthError(err) {
+    var reason = describeAuthError(err);
+    console.error('[index] Auth failed: ' + reason);
     Pebble.sendAppMessage({
-        TELEGRAM_CONNECTED: isConnected ? 1 : 0
+        TELEGRAM_AUTH_ERROR: 1,
+        TELEGRAM_AUTH_ERROR_REASON: reason
+    }, null, function(e) {
+        console.error('[index] Failed to send auth error: ' + JSON.stringify(e));
     });
 }
 
 function handleTelegramDisconnect() {
     console.log('[index] Disconnecting from Telegram');
+    authRequestSeq++;
     telegram.logout().then(function() {
         console.log('[index] Disconnected successfully');
-        sendTelegramStatus();
     }).catch(function(err) {
-        console.error('[index] Failed to disconnect: ' + err.message);
+        console.error('[index] Failed to disconnect: ' + (err.message || err));
+    }).then(function() {
+        // logout() clears local state even when the network disconnect fails,
+        // so the watch must be told it is no longer connected either way.
+        sendTelegramStatus();
+    });
+}
+
+function handleStartAuth(phone) {
+    ensureTelegramBundle();
+    var seq = ++authRequestSeq;
+    console.log('[index] Watch requested start_auth for: ' + phone);
+
+    // If the phone still has a session - e.g. the watch was reset but the
+    // phone app wasn't - reuse it instead of forcing a new SMS code.
+    if (telegram.hasSession() && typeof TelegramClient !== 'undefined') {
+        console.log('[index] Existing Telegram session found; reporting connected');
+        Pebble.sendAppMessage({
+            TELEGRAM_CONNECTED: 1,
+            AGENT_TELEGRAM_USERNAME: telegram.getBotUsername()
+        });
+        history.fetchAndSendHistory();
+        return;
+    }
+
+    telegram.startAuth(phone).then(function(result) {
+        if (seq !== authRequestSeq) {
+            console.log('[index] Ignoring stale auth result');
+            return;
+        }
+        console.log('[index] startAuth result: ' + JSON.stringify(result));
+        if (result.success) {
+            Pebble.sendAppMessage({ TELEGRAM_CODE_SENT: 1 }, null, function(e) {
+                console.error('[index] Failed to send code-sent status: ' + JSON.stringify(e));
+            });
+        } else if (result.status === 'password_needed') {
+            sendAuthError(new Error('SESSION_PASSWORD_NEEDED'));
+        } else {
+            sendAuthError(new Error('Auth failed: ' + (result.status || 'unknown')));
+        }
+    }).catch(function(err) {
+        if (seq !== authRequestSeq) {
+            console.log('[index] Ignoring stale auth failure');
+            return;
+        }
+        sendAuthError(err);
+    });
+}
+
+function handleProvideCode(code) {
+    ensureTelegramBundle();
+    var seq = ++authRequestSeq;
+    console.log('[index] Watch provided code');
+    telegram.provideCode(code).then(function(result) {
+        if (seq !== authRequestSeq) {
+            console.log('[index] Ignoring stale code result');
+            return;
+        }
+        console.log('[index] provideCode result: ' + JSON.stringify(result));
+        if (result.success) {
+            Pebble.sendAppMessage({
+                TELEGRAM_CONNECTED: 1,
+                AGENT_TELEGRAM_USERNAME: telegram.getBotUsername()
+            });
+            history.fetchAndSendHistory();
+        } else if (result.status === 'password_needed') {
+            sendAuthError(new Error('SESSION_PASSWORD_NEEDED'));
+        } else {
+            sendAuthError(new Error('Sign-in failed'));
+        }
+    }).catch(function(err) {
+        if (seq !== authRequestSeq) {
+            console.log('[index] Ignoring stale code failure');
+            return;
+        }
+        sendAuthError(err);
     });
 }
 
@@ -67,45 +203,12 @@ function handleAppMessage(e) {
     }
 
     if ('TELEGRAM_START_AUTH' in data) {
-        ensureTelegramBundle();
-        var phone = data.TELEGRAM_START_AUTH;
-        console.log('[index] Watch requested start_auth for: ' + phone);
-        telegram.startAuth(phone).then(function(result) {
-            console.log('[index] startAuth result: ' + JSON.stringify(result));
-            if (result.success) {
-                Pebble.sendAppMessage({ TELEGRAM_CODE_SENT: 1 });
-            } else {
-                Pebble.sendAppMessage({ TELEGRAM_AUTH_ERROR: 1 });
-            }
-        }).catch(function(err) {
-            console.error('[index] startAuth failed: ' + err.message);
-            Pebble.sendAppMessage({ TELEGRAM_AUTH_ERROR: 1 });
-        });
+        handleStartAuth(data.TELEGRAM_START_AUTH);
         return;
     }
 
     if ('TELEGRAM_PROVIDE_CODE' in data) {
-        ensureTelegramBundle();
-        var code = data.TELEGRAM_PROVIDE_CODE;
-        console.log('[index] Watch provided code');
-        telegram.provideCode(code).then(function(result) {
-            console.log('[index] provideCode result: ' + JSON.stringify(result));
-            if (result.success) {
-                var username = telegram.getBotUsername();
-                Pebble.sendAppMessage({
-                    TELEGRAM_CONNECTED: 1,
-                    AGENT_TELEGRAM_USERNAME: username
-                });
-                history.fetchAndSendHistory();
-            } else if (result.status === 'password_needed') {
-                Pebble.sendAppMessage({ TELEGRAM_AUTH_ERROR: 1 });
-            } else {
-                Pebble.sendAppMessage({ TELEGRAM_AUTH_ERROR: 1 });
-            }
-        }).catch(function(err) {
-            console.error('[index] provideCode failed: ' + err.message);
-            Pebble.sendAppMessage({ TELEGRAM_AUTH_ERROR: 1 });
-        });
+        handleProvideCode(data.TELEGRAM_PROVIDE_CODE);
         return;
     }
 
@@ -116,7 +219,11 @@ function handleAppMessage(e) {
     }
 
     if ('LOCATION_ENABLED' in data) {
-        config.setSetting("LOCATION_ENABLED", !!data.LOCATION_ENABLED);
+        try {
+            config.setSetting("LOCATION_ENABLED", !!data.LOCATION_ENABLED);
+        } catch (err) {
+            console.error('[index] Failed to save location setting: ' + (err.message || err));
+        }
         console.log("Location enabled: " + config.isLocationEnabled());
         // We need to confirm that we received this for the watch to proceed.
         Pebble.sendAppMessage({
@@ -151,3 +258,4 @@ exports.updateTelegramStatus = function() {
 // Export message handler for testing
 exports.handleAppMessage = handleAppMessage;
 exports.handleTelegramDisconnect = handleTelegramDisconnect;
+exports.describeAuthError = describeAuthError;
