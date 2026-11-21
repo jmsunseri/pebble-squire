@@ -15,4 +15,5 @@
  */
 #pragma once
 
+void release_notes_push();
 void release_notes_maybe_push();

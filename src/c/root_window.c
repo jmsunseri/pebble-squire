@@ -23,6 +23,7 @@
 #include "converse/history.h"
 #include "menus/about_window.h"
 #include "menus/sample_prompts_menu.h"
+#include "release_notes.h"
 #include "util/logging.h"
 #include "util/style.h"
 #include "util/thinking_layer.h"
@@ -74,6 +75,7 @@ static void prv_action_menu_closed(ActionMenu *action_menu, const ActionMenuItem
 static void prv_menu_about(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
 static void prv_menu_disconnect(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
 static void prv_menu_ask_again(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
+static void prv_menu_whats_new(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
 static void prv_disconnect_confirm_selected(ActionMenu *action_menu, const ActionMenuItem *action, void *context);
 static void prv_disconnect_confirm_menu_closed(ActionMenu *action_menu, const ActionMenuItem *performed_action, void *context);
 static void prv_app_message_handler(DictionaryIterator *iter, void *context);
@@ -246,11 +248,12 @@ static void prv_prompt_clicked(ClickRecognizerRef recognizer, void *context) {
 
 static void prv_more_clicked(ClickRecognizerRef recognizer, void* context) {
   RootWindow* rw = context;
-  // Ask Again + About, with a separator before Disconnect.
-  ActionMenuLevel *level = baction_menu_level_create(3);
+  // Ask Again + About + What's New, with a separator before Disconnect.
+  ActionMenuLevel *level = baction_menu_level_create(4);
   action_menu_level_add_action(level, "Ask Again", prv_menu_ask_again, NULL);
   action_menu_level_add_action(level, "About", prv_menu_about, NULL);
-  action_menu_level_set_separator_index(level, 2);
+  action_menu_level_add_action(level, "What's New", prv_menu_whats_new, NULL);
+  action_menu_level_set_separator_index(level, 3);
   action_menu_level_add_action(level, "Disconnect", prv_menu_disconnect, rw);
   ActionMenuConfig config = (ActionMenuConfig) {
     .root_level = level,
@@ -271,6 +274,10 @@ static void prv_menu_about(ActionMenu *action_menu, const ActionMenuItem *action
 
 static void prv_menu_ask_again(ActionMenu *action_menu, const ActionMenuItem *action, void *context) {
   sample_prompts_menu_push();
+}
+
+static void prv_menu_whats_new(ActionMenu *action_menu, const ActionMenuItem *action, void *context) {
+  release_notes_push();
 }
 
 static void prv_menu_disconnect(ActionMenu *action_menu, const ActionMenuItem *action, void *context) {

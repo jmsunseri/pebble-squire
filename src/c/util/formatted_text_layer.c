@@ -116,6 +116,10 @@ void formatted_text_layer_set_text_color(FormattedTextLayer* layer, GColor color
 static void prv_layer_update(Layer *layer, GContext *ctx) {
   FormattedTextLayerData *data = layer_get_data(layer);
   GRect bounds = layer_get_bounds(layer);
+  Window *window = layer_get_window(layer);
+  int16_t screen_height = window
+      ? layer_get_bounds(window_get_root_layer(window)).size.h
+      : 168;
   GFont font_lookup[3] = {
     data->title_font,
     data->subtitle_font,
@@ -129,7 +133,7 @@ static void prv_layer_update(Layer *layer, GContext *ctx) {
       continue;
     }
     // If we're off the bottom of the screen, stop - there's no more work to do.
-    if (layer_convert_point_to_screen(layer, GPoint(0, fragment->vertical_offset)).y > 168) {
+    if (layer_convert_point_to_screen(layer, GPoint(0, fragment->vertical_offset)).y > screen_height) {
       break;
     }
     // If the next fragment starts before the beginning of the screen, skip ahead.
