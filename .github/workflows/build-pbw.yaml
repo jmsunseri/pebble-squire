@@ -58,6 +58,10 @@ jobs:
         run: if [ ! -d ~/.pebble-sdk ]; then mkdir -p ~/.pebble-sdk && touch ~/.pebble-sdk/NO_TRACKING && ~/sdk/bin/pebble sdk install ~/sdk/sdk-core-4.3.tar.bz2; fi
       - name: fix whatever this git nonsense is
         run: git config --global --add safe.directory /__w/pebble-squire/pebble-squire;
+      # Store builds are produced in CloudPebble, which injects the PebbleKit JS
+      # environment variables TELEGRAM_APP_ID and TELEGRAM_APP_HASH into the
+      # bundle. This workflow does not have them, so its artifact is for build
+      # verification only and cannot sign in to Telegram.
       - name: pebble-build
         run: yes | ~/sdk/bin/pebble build
       - name: rename-app

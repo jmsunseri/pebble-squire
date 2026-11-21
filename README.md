@@ -47,6 +47,34 @@ Watch App → Phone App (pkjs) → Telegram MTProto → Hermes/OpenClaw Bot
    - If your account has 2FA enabled, you'll also be asked for your password
 4. Use the **Disconnect** button in the phone settings to sign out of Telegram
 
+### 3. Telegram API Credentials
+
+Squire talks to Telegram directly over MTProto, so it needs a Telegram API ID
+and API hash.
+
+These are read from the `TELEGRAM_APP_ID` and `TELEGRAM_APP_HASH` environment
+variables when PebbleKit JS is built (see `src/pkjs/telegram/auth.js` and
+`src/pkjs/telegram/client.js`). The values are inlined into the built bundle;
+they are not stored in this repository.
+
+- **Release builds** are built in CloudPebble. Both variables must be set in
+  CloudPebble's PebbleKit JS environment variables. CloudPebble applies them
+  during the build, before the app is deployed to the store.
+- **Local builds** do not read `.env` and do not inject these variables by
+  default (`pebble build` with SDK 4.9.x). The `.env` file in this repository is
+  only used by the test suite. A local build is fine for UI and compile checks,
+  but Telegram sign-in will fail unless your local build step substitutes the
+  values.
+- **CI** (`.github/workflows/build-pbw.yaml`) builds the app for compile
+  verification only. It does not have the store credentials, so its artifact is
+  not suitable for testing Telegram sign-in.
+
+If either variable is missing, the app still builds, but every Telegram sign-in
+fails at runtime with a generic "Auth Failed" message.
+
+Create your own credentials at [my.telegram.org](https://my.telegram.org) (API
+development tools). Never commit real credentials.
+
 ## Development
 
 ### Project Structure

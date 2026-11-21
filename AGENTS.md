@@ -9,6 +9,18 @@
 - When in doubt, ask. It is better to confirm twice than to commit or push once without permission.
 - Do not create pull requests, tags, or releases without explicit permission.
 
+## Build & Deployment
+
+- Release builds are produced in **CloudPebble**, not by a local `pebble build`.
+- The CloudPebble build environment supplies the PebbleKit JS variables
+  `TELEGRAM_APP_ID` and `TELEGRAM_APP_HASH`; CloudPebble inlines them into the
+  built bundle. They are intentionally not in this repository.
+- A local `pebble build` does not inject those variables, and `.env` is only read
+  by the test suite. Do not conclude that Telegram auth is broken just because a
+  local build lacks credentials — see "Telegram API Credentials" in `README.md`.
+- Artifacts from `.github/workflows/build-pbw.yaml` are compile checks, not
+  shippable builds.
+
 ## Workflow
 
 1. Make the requested code or file changes.

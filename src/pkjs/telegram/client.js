@@ -45,6 +45,7 @@ function initClient() {
 
             if (typeof TelegramClient !== 'undefined') {
                 console.log('[client] GramJS available, creating TelegramClient...');
+                // Inlined at build time by CloudPebble; see README.
                 var apiId = parseInt(process.env.TELEGRAM_APP_ID, 10);
                 var apiHash = process.env.TELEGRAM_APP_HASH || '';
                 if (!apiId || !apiHash) {

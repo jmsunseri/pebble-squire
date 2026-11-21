@@ -54,6 +54,9 @@ var AUTH_DC = {
     host: 'pluto.web.telegram.org'
 };
 
+// TELEGRAM_APP_ID / TELEGRAM_APP_HASH are inlined at build time.
+// Release builds get them from the CloudPebble build environment;
+// see "Telegram API Credentials" in README.md.
 function createAuthClient() {
     var StringSessionCls = StringSession;
     var apiId = parseInt(process.env.TELEGRAM_APP_ID, 10);
