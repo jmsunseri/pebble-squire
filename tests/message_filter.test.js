@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 const { isExcludedMessage } = require('../src/pkjs/message_filter');
-const { buildHistory } = require('../src/pkjs/history');
+const { buildHistory, buildRecentPrompts } = require('../src/pkjs/history');
 const Queue = require('../src/pkjs/lib/message_queue').Queue;
 const { Session } = require('../src/pkjs/session');
 
@@ -74,6 +74,57 @@ describe('excluded Telegram messages', () => {
             { type: 'response', text: '[thread:abc] A bot reply' },
             { type: 'prompt', text: 'My question' }
         ]);
+    });
+
+    it('collects the ten most recent questions for Ask Again', () => {
+        const messages = [];
+        for (let i = 11; i >= 0; i--) {
+            messages.push({ out: true, message: '[thread:abc] <system>ctx</system>\n\nQuestion ' + i });
+            messages.push({ out: false, message: 'Answer ' + i });
+        }
+
+        const prompts = buildRecentPrompts(messages);
+        expect(prompts).toEqual([
+            'Question 11', 'Question 10', 'Question 9', 'Question 8', 'Question 7',
+            'Question 6', 'Question 5', 'Question 4', 'Question 3', 'Question 2'
+        ]);
+
+        // The conversation window stays capped at eight interleaved entries.
+        const history = buildHistory(messages);
+        expect(history.entries).toHaveLength(8);
+        expect(history.threadId).toBe('abc');
+    });
+
+    it('de-duplicates questions, keeping the most recent occurrence', () => {
+        const messages = [
+            { out: true, message: '[thread:abc] <system>ctx</system>\n\nQuestion A' },
+            { out: false, message: 'Answer A' },
+            { out: true, message: '[thread:abc] <system>ctx</system>\n\nQuestion B' },
+            { out: false, message: 'Answer B' },
+            { out: true, message: '[thread:abc] <system>ctx</system>\n\nQuestion A' }
+        ];
+
+        expect(buildRecentPrompts(messages)).toEqual(['Question A', 'Question B']);
+    });
+
+    it('keeps excluded messages out of the Ask Again list', () => {
+        const messages = [
+            { out: true, message: '[thread:abc] <system>ctx</system>\n\nReal question' },
+            { out: true, message: '[thread:abc] <system>ctx</system>\n\nSelf-improvement review: nope' },
+            { out: true, message: '[thread:abc] <system>ctx</system>\n\nWorking \u2014 nope' }
+        ];
+
+        expect(buildRecentPrompts(messages)).toEqual(['Real question']);
+    });
+
+    it('does not add older thread-marker prompts to Ask Again when system blocks exist', () => {
+        const messages = [
+            { out: true, message: '[thread:abc] <system>ctx</system>\n\nNew question' },
+            { out: false, message: 'New answer' },
+            { out: true, message: '[thread:abc] Old question' }
+        ];
+
+        expect(buildRecentPrompts(messages)).toEqual(['New question']);
     });
 
     it('is never queued for the watch from a live response', () => {

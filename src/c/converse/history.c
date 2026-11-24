@@ -5,6 +5,8 @@
 
 static HistoryEntry s_entries[HISTORY_MAX_ENTRIES];
 static int s_count = 0;
+static char s_recent_prompts[HISTORY_RECENT_PROMPT_MAX][HISTORY_TEXT_MAX];
+static int s_recent_prompt_count = 0;
 static char s_thread_id[37] = "";
 static bool s_done = false;
 static bool s_loading = false;
@@ -35,10 +37,22 @@ static void prv_copy_entry_text(char* dst, const char* src, size_t dst_size) {
 
 void history_init(void) {
   s_count = 0;
+  s_recent_prompt_count = 0;
   s_done = false;
   s_loading = true;
   s_done_callback = NULL;
   s_thread_id[0] = '\0';
+}
+
+// Start a new history batch. The text buffers are deliberately left intact so
+// an open menu still has valid pointers until the replacement batch arrives.
+void history_reset(void) {
+  s_count = 0;
+  s_recent_prompt_count = 0;
+  s_done = false;
+  s_loading = true;
+  // Keep the thread ID: if the replacement batch has no thread marker, the
+  // existing conversation is still the right place for a reused question.
 }
 
 void history_set_loading(bool loading) {
@@ -69,6 +83,44 @@ void history_add_response(const char* text) {
   SQUIRE_LOG(APP_LOG_LEVEL_INFO, "History response %d: %.50s", s_count, text);
 }
 
+static void prv_push_recent_prompt(const char* text) {
+  // If this question is already in the ring, remove it first so it moves to
+  // the newest position instead of appearing twice. Compare with the same
+  // truncation the entry was stored with.
+  for (int i = 0; i < s_recent_prompt_count; i++) {
+    if (strncmp(s_recent_prompts[i], text, HISTORY_TEXT_MAX - 1) == 0) {
+      for (int j = i; j < s_recent_prompt_count - 1; j++) {
+        memcpy(s_recent_prompts[j], s_recent_prompts[j + 1], HISTORY_TEXT_MAX);
+      }
+      s_recent_prompt_count--;
+      break;
+    }
+  }
+  if (s_recent_prompt_count >= HISTORY_RECENT_PROMPT_MAX) {
+    for (int i = 0; i < HISTORY_RECENT_PROMPT_MAX - 1; i++) {
+      memcpy(s_recent_prompts[i], s_recent_prompts[i + 1], HISTORY_TEXT_MAX);
+    }
+    s_recent_prompt_count = HISTORY_RECENT_PROMPT_MAX - 1;
+  }
+  prv_copy_entry_text(s_recent_prompts[s_recent_prompt_count], text, HISTORY_TEXT_MAX);
+  s_recent_prompt_count++;
+}
+
+void history_add_recent_prompt(const char* text) {
+  prv_push_recent_prompt(text);
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Recent prompt %d: %.50s", s_recent_prompt_count, text);
+}
+
+int history_get_recent_prompt_count(void) {
+  return s_recent_prompt_count;
+}
+
+// Index 0 is the most recent question.
+const char* history_get_recent_prompt(int index) {
+  if (index < 0 || index >= s_recent_prompt_count) return NULL;
+  return s_recent_prompts[s_recent_prompt_count - 1 - index];
+}
+
 void history_set_thread_id(const char* thread_id) {
   strncpy(s_thread_id, thread_id, sizeof(s_thread_id) - 1);
   s_thread_id[sizeof(s_thread_id) - 1] = '\0';
@@ -88,6 +140,7 @@ void history_push_prompt(const char* text) {
   s_entries[s_count].type = HistoryEntryTypePrompt;
   prv_copy_entry_text(s_entries[s_count].text, text, sizeof(s_entries[s_count].text));
   s_count++;
+  prv_push_recent_prompt(text);
   SQUIRE_LOG(APP_LOG_LEVEL_INFO, "History push prompt %d: %.50s", s_count, text);
 }
 
@@ -106,10 +159,13 @@ void history_push_thread_id(const char* thread_id) {
 void history_set_done(void) {
   s_done = true;
   s_loading = false;
-  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "History done. %d entries.", s_count);
-  if (s_done_callback) {
-    s_done_callback();
-    s_done_callback = NULL;
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "History done. %d entries, %d recent prompts.", s_count, s_recent_prompt_count);
+  // Clear the callback before invoking it so a still-open window can register
+  // itself again for the next batch.
+  void (*callback)(void) = s_done_callback;
+  s_done_callback = NULL;
+  if (callback) {
+    callback();
   }
 }
 
@@ -132,6 +188,7 @@ const HistoryEntry* history_get_entry(int index) {
 
 void history_free(void) {
   s_count = 0;
+  s_recent_prompt_count = 0;
   s_done = false;
   s_thread_id[0] = '\0';
 }

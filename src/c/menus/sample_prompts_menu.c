@@ -35,8 +35,8 @@ typedef struct {
 } SamplePromptsMenuData;
 
 // Show the most recent few prompts. The entries are pointers into the fixed
-// history array, so showing more costs only a pointer each.
-#define RECENT_PROMPT_LIMIT 5
+// history arrays, so showing more costs only a pointer each.
+#define RECENT_PROMPT_LIMIT HISTORY_RECENT_PROMPT_MAX
 
 // The visible menu, so the history-loaded callback can refresh it.
 static Window *s_window = NULL;
@@ -98,23 +98,51 @@ static void prv_load_canned_prompts(SamplePromptsMenuData *data) {
 }
 
 static void prv_load_history_prompts(SamplePromptsMenuData *data) {
+  // The phone sends the most recent questions separately from the interleaved
+  // conversation history, so Ask Again can show more of them than the history
+  // array holds.
+  int count = history_get_recent_prompt_count();
+  if (count > RECENT_PROMPT_LIMIT) count = RECENT_PROMPT_LIMIT;
+  if (count > 0) {
+    data->prompts = bmalloc(sizeof(char*) * count);
+    if (!data->prompts) return;
+    for (int i = 0; i < count; i++) {
+      const char *prompt = history_get_recent_prompt(i);
+      if (!prompt) break;
+      // Point at the ring entry; do not duplicate the text.
+      data->prompts[data->count++] = (char*)prompt;
+    }
+    data->using_history = data->count > 0;
+    return;
+  }
+
+  // Fall back to prompts in the interleaved history when no separate list has
+  // arrived (for example, a batch from an older phone build).
   int total = history_get_count();
   int available = 0;
   for (int i = 0; i < total; i++) {
     const HistoryEntry *entry = history_get_entry(i);
     if (entry && entry->type == HistoryEntryTypePrompt) available++;
   }
-  int count = available < RECENT_PROMPT_LIMIT ? available : RECENT_PROMPT_LIMIT;
+  count = available < RECENT_PROMPT_LIMIT ? available : RECENT_PROMPT_LIMIT;
   if (count == 0) return;
 
   data->prompts = bmalloc(sizeof(char*) * count);
   if (!data->prompts) return;
 
-  // Walk backwards so the most recent prompt is first.
+  // Walk backwards so the most recent prompt is first, skipping repeats.
   int idx = 0;
   for (int i = total - 1; i >= 0 && idx < count; i--) {
     const HistoryEntry *entry = history_get_entry(i);
-    if (entry && entry->type == HistoryEntryTypePrompt) {
+    if (!entry || entry->type != HistoryEntryTypePrompt) continue;
+    bool duplicate = false;
+    for (int j = 0; j < idx; j++) {
+      if (strcmp(entry->text, data->prompts[j]) == 0) {
+        duplicate = true;
+        break;
+      }
+    }
+    if (!duplicate) {
       // Point at the history entry; do not duplicate the text.
       data->prompts[idx++] = (char*)entry->text;
     }
@@ -152,6 +180,9 @@ static void prv_history_done(void) {
   SamplePromptsMenuData *data = window_get_user_data(s_window);
   prv_load_source(data);
   menu_layer_reload_data(data->menu_layer);
+  // history_set_done clears the callback before calling it, so keep listening
+  // for another batch while this menu is visible.
+  history_set_done_callback(prv_history_done);
 }
 
 static void prv_window_load(Window* window) {
@@ -161,9 +192,9 @@ static void prv_window_load(Window* window) {
 
   s_window = window;
   prv_load_source(data);
-  if (data->waiting_for_history) {
-    history_set_done_callback(prv_history_done);
-  }
+  // Keep listening even when cached data is already shown, so a later batch
+  // (or a retried history request) refreshes the menu.
+  history_set_done_callback(prv_history_done);
 
   window_set_background_color(window, GColorWhite);
 

@@ -33,11 +33,25 @@
 
 #define QUICK_LAUNCH_TIMEOUT_MS 60000
 
+// History is pulled by the watch rather than pushed when PebbleKit JS starts,
+// so the burst cannot land before this app is listening. Retry a few times in
+// case the phone-side JS is still starting up.
+#define HISTORY_REQUEST_INITIAL_DELAY_MS 1000
+#define HISTORY_REQUEST_RETRY_DELAY_MS 2000
+#define HISTORY_REQUEST_MAX_ATTEMPTS 5
+
 static RootWindow* s_root_window = NULL;
 static EventHandle s_history_handle;
+static AppTimer* s_history_request_timer = NULL;
+static int s_history_request_attempts = 0;
+static bool s_history_response_seen = false;
+
+static void prv_request_history(void);
+static void prv_history_request_timer_callback(void *context);
 
 static void prv_history_message_handler(DictionaryIterator *iter, void *context) {
   bool saw_history_key = false;
+  bool saw_reset = false;
   for (Tuple *tuple = dict_read_first(iter); tuple; tuple = dict_read_next(iter)) {
     if (tuple->key == MESSAGE_KEY_HISTORY_PROMPT) {
       saw_history_key = true;
@@ -45,17 +59,51 @@ static void prv_history_message_handler(DictionaryIterator *iter, void *context)
     } else if (tuple->key == MESSAGE_KEY_HISTORY_RESPONSE) {
       saw_history_key = true;
       history_add_response(tuple->value->cstring);
+    } else if (tuple->key == MESSAGE_KEY_RECENT_PROMPT) {
+      saw_history_key = true;
+      history_add_recent_prompt(tuple->value->cstring);
     } else if (tuple->key == MESSAGE_KEY_HISTORY_THREAD_ID) {
       saw_history_key = true;
       history_set_thread_id(tuple->value->cstring);
+    } else if (tuple->key == MESSAGE_KEY_HISTORY_RESET) {
+      saw_history_key = true;
+      saw_reset = true;
+      history_reset();
     } else if (tuple->key == MESSAGE_KEY_HISTORY_DONE) {
       saw_history_key = true;
       history_set_done();
     }
   }
   if (saw_history_key) {
-    history_set_loading(false);
+    s_history_response_seen = true;
+    if (!saw_reset) {
+      history_set_loading(false);
+    }
   }
+}
+
+static void prv_request_history(void) {
+  if (s_history_response_seen) return;
+  if (s_history_request_attempts >= HISTORY_REQUEST_MAX_ATTEMPTS) return;
+  s_history_request_attempts++;
+  SQUIRE_LOG(APP_LOG_LEVEL_INFO, "Requesting history (attempt %d).", s_history_request_attempts);
+  DictionaryIterator *iter;
+  AppMessageResult result = app_message_outbox_begin(&iter);
+  if (result == APP_MSG_OK) {
+    dict_write_int8(iter, MESSAGE_KEY_HISTORY_REQUEST, 1);
+    result = app_message_outbox_send();
+    if (result != APP_MSG_OK) {
+      SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "History request send failed: %d.", result);
+    }
+  } else {
+    SQUIRE_LOG(APP_LOG_LEVEL_WARNING, "Could not prepare history request: %d.", result);
+  }
+  s_history_request_timer = app_timer_register(HISTORY_REQUEST_RETRY_DELAY_MS, prv_history_request_timer_callback, NULL);
+}
+
+static void prv_history_request_timer_callback(void *context) {
+  s_history_request_timer = NULL;
+  prv_request_history();
 }
 
 static void prv_init(void) {
@@ -67,11 +115,18 @@ static void prv_init(void) {
   conversation_manager_init();
   s_history_handle = events_app_message_register_inbox_received(prv_history_message_handler, NULL);
   events_app_message_open();
+  s_history_response_seen = false;
+  s_history_request_attempts = 0;
+  s_history_request_timer = app_timer_register(HISTORY_REQUEST_INITIAL_DELAY_MS, prv_history_request_timer_callback, NULL);
 }
 
 static void prv_deinit(void) {
   if (s_root_window) {
     root_window_destroy(s_root_window);
+  }
+  if (s_history_request_timer) {
+    app_timer_cancel(s_history_request_timer);
+    s_history_request_timer = NULL;
   }
   events_app_message_unsubscribe(s_history_handle);
 }

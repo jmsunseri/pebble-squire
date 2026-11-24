@@ -33,7 +33,8 @@ var clay = new Clay(clayConfig, customConfigFunction);
 function main() {
     location.update();
     sendTelegramStatus();
-    history.fetchAndSendHistory();
+    // History is requested by the watch once it is listening, so a burst sent
+    // during startup cannot be dropped. See handleAppMessage.
     Pebble.addEventListener('appmessage', handleAppMessage);
 }
 
@@ -136,7 +137,7 @@ function handleStartAuth(phone) {
             TELEGRAM_CONNECTED: 1,
             AGENT_TELEGRAM_USERNAME: telegram.getBotUsername()
         });
-        history.fetchAndSendHistory();
+        history.fetchAndSendHistory(true);
         return;
     }
 
@@ -179,7 +180,7 @@ function handleProvideCode(code) {
                 TELEGRAM_CONNECTED: 1,
                 AGENT_TELEGRAM_USERNAME: telegram.getBotUsername()
             });
-            history.fetchAndSendHistory();
+            history.fetchAndSendHistory(true);
         } else if (result.status === 'password_needed') {
             sendAuthError(new Error('SESSION_PASSWORD_NEEDED'));
         } else {
@@ -198,6 +199,11 @@ function handleAppMessage(e) {
     console.log("Inbound app message!");
     console.log(JSON.stringify(e));
     var data = e.payload;
+    if ('HISTORY_REQUEST' in data) {
+        history.fetchAndSendHistory();
+        return;
+    }
+
     if (data.PROMPT) {
         console.log("Starting a new Session...");
         var s = new session.Session(data.PROMPT, data.THREAD_ID);

@@ -1,7 +1,7 @@
 {
   "name": "Squire",
   "author": "Justin Sunseri",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "keywords": [
     "pebble-app"
   ],
@@ -62,7 +62,10 @@
       "TELEGRAM_CODE_SENT",
       "TELEGRAM_AUTH_ERROR",
       "TELEGRAM_DISCONNECT",
-      "TELEGRAM_AUTH_ERROR_REASON"
+      "TELEGRAM_AUTH_ERROR_REASON",
+      "RECENT_PROMPT",
+      "HISTORY_RESET",
+      "HISTORY_REQUEST"
     ],
     "resources": {
       "media": [
